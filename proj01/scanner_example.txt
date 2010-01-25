@@ -1,0 +1,244 @@
+-- Some bad tokens
+a__b123 . .abc @
+
+-- Test for MIEDs modeling language and simulator.
+description
+
+  -- Define a scalar constant.
+  eastern_border = 10;
+
+  -- Set up some points, where eastern border is
+  -- the constant above.
+  O  = (0, 0);
+  W  = (-10,   0); E  = (eastern_border,  0);
+  Ehalf = (eastern_border/2, 0);
+  S  = (  0, -10); N  = (eastern_border,  0);
+  SW = (-10, -10); NE = (eastern_border, 10);
+  SE = (eastern_border, -10); NW = (-10, 10);
+
+  -- Set up a trafficability constant.
+  main_street_trafficability = 0.9;
+
+  -- Set up some segments that exercise all the
+  -- possible optional attributes.
+  s1 = segment SW -> O
+	with
+	trafficability = main_street_trafficability,
+	vulnerability = 0.7;
+
+  s2 = segment O -> Ehalf
+	with
+	vulnerability = 0.5;
+
+  s3 = segment Ehalf -> NE;
+
+  -- Now we can create a route with 3 segments.  The parser is
+  -- responsible for checking that the end point of each segment
+  -- matches the start point of the next.
+  main_street = route (s1, s2, s3);
+
+  -- More segments...
+  t1 = segment N -> Ehalf
+	with
+	vulnerability = 0.3;
+
+  t2 = segment O -> NW;
+
+  -- Note this route shares a segment with the other one,
+  -- with traffic through it moving in the opposite direction.
+  airport_road = route (t1, ~s2, t2);
+
+  -- A sensor that has a range of only 10 meters.  Only the
+  -- friends that carry these things make sense as responders.
+  short_range_detonator = sensor 10 * 0.001 -> (mail_truck, ert)
+	with
+	effectiveness = 0.9;
+
+  -- Here's your friendly mail truck.  It can go 90 km/hr under
+  -- ideal conditions and carries a sensor.
+  mail_truck = friend 90 -- km/hour speed
+	with
+	sensor = short_range_detonator,
+	vulnerability = 0.5, -- to being hurt by a threat
+	effectiveness = 0.9; -- as a mitigator
+
+  -- This is an emergency response team.  We'll play little tricks
+  -- with MIEDs semantics so that all it ever does is respond to
+  -- sensor reports from the mail truck.
+  ert = friend 90
+	with
+	sensor = short_range_detector,
+	vulnerability = 0.1,
+	effectiveness = 1.0;
+
+  -- Here is a null schedule.  It's a 1-shot schedule with
+  -- a start time so far in the future that we'll never see it.
+  waiting_to_respond = schedule with start = 1000000000;
+
+  -- Try some example schedules
+  default = schedule;
+
+  daily_at_noon = schedule
+	with
+	start = 12,
+	interval = normal(24, 0.3);
+
+  weekly_at_midnight = schedule
+  	with
+	start = 0,
+	interval = 24 * 7 + uniform(-.1, .1);
+
+  mail_run(x : schedule) = trip mail_truck -> main_street
+	with
+	schedule = x;
+
+  intersection = segment O -> O; -- zero-length segment
+  ert_station = route(intersection); -- "route" at intersection
+
+  rapid_response(x : route) = trip ert -> x
+	with
+	schedule = waiting_to_respond;
+
+  tick_tock(x : number) = schedule with interval = x;
+
+  generally_bad(days : number) = threat (main_street, airport_road)
+	with
+	schedule = tick_tock(x * 24);
+
+instance
+  initial_run : mail_run(default);
+  noon_mail_run : mail_run(daily_noon);
+  payroll_run : mail_run(weekly_at_midnight);
+  ready_team_standing_by : rapid_response(intersection);
+  steady_bad_news : generally_bad(2.3); -- hazards placed every 2.3 days or so.
+
+
+[2|a__b123|ILLEGAL_TOKEN][2|.|ILLEGAL_TOKEN][2|.abc|ILLEGAL_TOKEN][2|@|ILLEGAL_TOKEN]
+
+[5|description|KEYWORD_DESCRIPTION]
+
+[8|eastern_border|ID][8|=|EQUALS][8|10|NUMBER][8|;|SEMI]
+
+[12|O|ID][12|=|EQUALS][12|(|LEFT_PAREN][12|0|NUMBER][12|,|COMMA][12|0|NUMBER][12|)|RIGHT_PAREN][12|;|SEMI]
+
+[13|W|ID][13|=|EQUALS][13|(|LEFT_PAREN][13|-|MINUS][13|10|NUMBER][13|,|COMMA][13|0|NUMBER][13|)|RIGHT_PAREN][13|;|SEMI][13|E|ID][13|=|EQUALS][13|(|LEFT_PAREN][13|eastern_border|ID][13|,|COMMA][13|0|NUMBER][13|)|RIGHT_PAREN][13|;|SEMI]
+
+[14|Ehalf|ID][14|=|EQUALS][14|(|LEFT_PAREN][14|eastern_border|ID][14|/|SLASH][14|2|NUMBER][14|,|COMMA][14|0|NUMBER][14|)|RIGHT_PAREN][14|;|SEMI]
+
+[15|S|ID][15|=|EQUALS][15|(|LEFT_PAREN][15|0|NUMBER][15|,|COMMA][15|-|MINUS][15|10|NUMBER][15|)|RIGHT_PAREN][15|;|SEMI][15|N|ID][15|=|EQUALS][15|(|LEFT_PAREN][15|eastern_border|ID][15|,|COMMA][15|0|NUMBER][15|)|RIGHT_PAREN][15|;|SEMI]
+
+[16|SW|ID][16|=|EQUALS][16|(|LEFT_PAREN][16|-|MINUS][16|10|NUMBER][16|,|COMMA][16|-|MINUS][16|10|NUMBER][16|)|RIGHT_PAREN][16|;|SEMI][16|NE|ID][16|=|EQUALS][16|(|LEFT_PAREN][16|eastern_border|ID][16|,|COMMA][16|10|NUMBER][16|)|RIGHT_PAREN][16|;|SEMI]
+
+[17|SE|ID][17|=|EQUALS][17|(|LEFT_PAREN][17|eastern_border|ID][17|,|COMMA][17|-|MINUS][17|10|NUMBER][17|)|RIGHT_PAREN][17|;|SEMI][17|NW|ID][17|=|EQUALS][17|(|LEFT_PAREN][17|-|MINUS][17|10|NUMBER][17|,|COMMA][17|10|NUMBER][17|)|RIGHT_PAREN][17|;|SEMI]
+
+[20|main_street_trafficability|ID][20|=|EQUALS][20|0.9|NUMBER][20|;|SEMI]
+
+[24|s1|ID][24|=|EQUALS][24|segment|KEYWORD_SEGMENT][24|SW|ID][24|->|ARROW][24|O|ID]
+
+[25|with|KEYWORD_WITH]
+
+[26|trafficability|KEYWORD_TRAFFICABILITY][26|=|EQUALS][26|main_street_trafficability|ID][26|,|COMMA]
+
+[27|vulnerability|KEYWORD_VULNERABILITY][27|=|EQUALS][27|0.7|NUMBER][27|;|SEMI]
+
+[29|s2|ID][29|=|EQUALS][29|segment|KEYWORD_SEGMENT][29|O|ID][29|->|ARROW][29|Ehalf|ID]
+
+[30|with|KEYWORD_WITH]
+
+[31|vulnerability|KEYWORD_VULNERABILITY][31|=|EQUALS][31|0.5|NUMBER][31|;|SEMI]
+
+[33|s3|ID][33|=|EQUALS][33|segment|KEYWORD_SEGMENT][33|Ehalf|ID][33|->|ARROW][33|NE|ID][33|;|SEMI]
+
+[38|main_street|ID][38|=|EQUALS][38|route|KEYWORD_ROUTE][38|(|LEFT_PAREN][38|s1|ID][38|,|COMMA][38|s2|ID][38|,|COMMA][38|s3|ID][38|)|RIGHT_PAREN][38|;|SEMI]
+
+[41|t1|ID][41|=|EQUALS][41|segment|KEYWORD_SEGMENT][41|N|ID][41|->|ARROW][41|Ehalf|ID]
+
+[42|with|KEYWORD_WITH]
+
+[43|vulnerability|KEYWORD_VULNERABILITY][43|=|EQUALS][43|0.3|NUMBER][43|;|SEMI]
+
+[45|t2|ID][45|=|EQUALS][45|segment|KEYWORD_SEGMENT][45|O|ID][45|->|ARROW][45|NW|ID][45|;|SEMI]
+
+[49|airport_road|ID][49|=|EQUALS][49|route|KEYWORD_ROUTE][49|(|LEFT_PAREN][49|t1|ID][49|,|COMMA][49|~|TILDE][49|s2|ID][49|,|COMMA][49|t2|ID][49|)|RIGHT_PAREN][49|;|SEMI]
+
+[53|short_range_detonator|ID][53|=|EQUALS][53|sensor|KEYWORD_SENSOR][53|10|NUMBER][53|*|STAR][53|0.001|NUMBER][53|->|ARROW][53|(|LEFT_PAREN][53|mail_truck|ID][53|,|COMMA][53|ert|ID][53|)|RIGHT_PAREN]
+
+[54|with|KEYWORD_WITH]
+
+[55|effectiveness|KEYWORD_EFFECTIVENESS][55|=|EQUALS][55|0.9|NUMBER][55|;|SEMI]
+
+[59|mail_truck|ID][59|=|EQUALS][59|friend|KEYWORD_FRIEND][59|90|NUMBER]
+
+[60|with|KEYWORD_WITH]
+
+[61|sensor|KEYWORD_SENSOR][61|=|EQUALS][61|short_range_detonator|ID][61|,|COMMA]
+
+[62|vulnerability|KEYWORD_VULNERABILITY][62|=|EQUALS][62|0.5|NUMBER][62|,|COMMA]
+
+[63|effectiveness|KEYWORD_EFFECTIVENESS][63|=|EQUALS][63|0.9|NUMBER][63|;|SEMI]
+
+[68|ert|ID][68|=|EQUALS][68|friend|KEYWORD_FRIEND][68|90|NUMBER]
+
+[69|with|KEYWORD_WITH]
+
+[70|sensor|KEYWORD_SENSOR][70|=|EQUALS][70|short_range_detector|ID][70|,|COMMA]
+
+[71|vulnerability|KEYWORD_VULNERABILITY][71|=|EQUALS][71|0.1|NUMBER][71|,|COMMA]
+
+[72|effectiveness|KEYWORD_EFFECTIVENESS][72|=|EQUALS][72|1.0|NUMBER][72|;|SEMI]
+
+[76|waiting_to_respond|ID][76|=|EQUALS][76|schedule|KEYWORD_SCHEDULE][76|with|KEYWORD_WITH][76|start|KEYWORD_START][76|=|EQUALS][76|1000000000|NUMBER][76|;|SEMI]
+
+[79|default|ID][79|=|EQUALS][79|schedule|KEYWORD_SCHEDULE][79|;|SEMI]
+
+[81|daily_at_noon|ID][81|=|EQUALS][81|schedule|KEYWORD_SCHEDULE]
+
+[82|with|KEYWORD_WITH]
+
+[83|start|KEYWORD_START][83|=|EQUALS][83|12|NUMBER][83|,|COMMA]
+
+[84|interval|KEYWORD_INTERVAL][84|=|EQUALS][84|normal|KEYWORD_NORMAL][84|(|LEFT_PAREN][84|24|NUMBER][84|,|COMMA][84|0.3|NUMBER][84|)|RIGHT_PAREN][84|;|SEMI]
+
+[86|weekly_at_midnight|ID][86|=|EQUALS][86|schedule|KEYWORD_SCHEDULE]
+
+[87|with|KEYWORD_WITH]
+
+[88|start|KEYWORD_START][88|=|EQUALS][88|0|NUMBER][88|,|COMMA]
+
+[89|interval|KEYWORD_INTERVAL][89|=|EQUALS][89|24|NUMBER][89|*|STAR][89|7|NUMBER][89|+|PLUS][89|uniform|KEYWORD_UNIFORM][89|(|LEFT_PAREN][89|-|MINUS][89|.1|NUMBER][89|,|COMMA][89|.1|NUMBER][89|)|RIGHT_PAREN][89|;|SEMI]
+
+[91|mail_run|ID][91|(|LEFT_PAREN][91|x|ID][91|:|COLON][91|schedule|KEYWORD_SCHEDULE][91|)|RIGHT_PAREN][91|=|EQUALS][91|trip|KEYWORD_TRIP][91|mail_truck|ID][91|->|ARROW][91|main_street|ID]
+
+[92|with|KEYWORD_WITH]
+
+[93|schedule|KEYWORD_SCHEDULE][93|=|EQUALS][93|x|ID][93|;|SEMI]
+
+[95|intersection|ID][95|=|EQUALS][95|segment|KEYWORD_SEGMENT][95|O|ID][95|->|ARROW][95|O|ID][95|;|SEMI]
+
+[96|ert_station|ID][96|=|EQUALS][96|route|KEYWORD_ROUTE][96|(|LEFT_PAREN][96|intersection|ID][96|)|RIGHT_PAREN][96|;|SEMI]
+
+[98|rapid_response|ID][98|(|LEFT_PAREN][98|x|ID][98|:|COLON][98|route|KEYWORD_ROUTE][98|)|RIGHT_PAREN][98|=|EQUALS][98|trip|KEYWORD_TRIP][98|ert|ID][98|->|ARROW][98|x|ID]
+
+[99|with|KEYWORD_WITH]
+
+[100|schedule|KEYWORD_SCHEDULE][100|=|EQUALS][100|waiting_to_respond|ID][100|;|SEMI]
+
+[102|tick_tock|ID][102|(|LEFT_PAREN][102|x|ID][102|:|COLON][102|number|KEYWORD_NUMBER][102|)|RIGHT_PAREN][102|=|EQUALS][102|schedule|KEYWORD_SCHEDULE][102|with|KEYWORD_WITH][102|interval|KEYWORD_INTERVAL][102|=|EQUALS][102|x|ID][102|;|SEMI]
+
+[104|generally_bad|ID][104|(|LEFT_PAREN][104|days|ID][104|:|COLON][104|number|KEYWORD_NUMBER][104|)|RIGHT_PAREN][104|=|EQUALS][104|threat|KEYWORD_THREAT][104|(|LEFT_PAREN][104|main_street|ID][104|,|COMMA][104|airport_road|ID][104|)|RIGHT_PAREN]
+
+[105|with|KEYWORD_WITH]
+
+[106|schedule|KEYWORD_SCHEDULE][106|=|EQUALS][106|tick_tock|ID][106|(|LEFT_PAREN][106|x|ID][106|*|STAR][106|24|NUMBER][106|)|RIGHT_PAREN][106|;|SEMI]
+
+[108|instance|KEYWORD_INSTANCE]
+
+[109|initial_run|ID][109|:|COLON][109|mail_run|ID][109|(|LEFT_PAREN][109|default|ID][109|)|RIGHT_PAREN][109|;|SEMI]
+
+[110|noon_mail_run|ID][110|:|COLON][110|mail_run|ID][110|(|LEFT_PAREN][110|daily_noon|ID][110|)|RIGHT_PAREN][110|;|SEMI]
+
+[111|payroll_run|ID][111|:|COLON][111|mail_run|ID][111|(|LEFT_PAREN][111|weekly_at_midnight|ID][111|)|RIGHT_PAREN][111|;|SEMI]
+
+[112|ready_team_standing_by|ID][112|:|COLON][112|rapid_response|ID][112|(|LEFT_PAREN][112|intersection|ID][112|)|RIGHT_PAREN][112|;|SEMI]
+
+[113|steady_bad_news|ID][113|:|COLON][113|generally_bad|ID][113|(|LEFT_PAREN][113|2.3|NUMBER][113|)|RIGHT_PAREN][113|;|SEMI][113||END_INPUT]

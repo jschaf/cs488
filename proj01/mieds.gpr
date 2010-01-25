@@ -1,0 +1,7 @@
+project Mieds is
+
+   for Object_Dir use "";
+   for Main use ("scanner_develop.adb", "parser_develop.adb");
+
+end Mieds;
+
