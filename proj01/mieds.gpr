@@ -1,7 +1,56 @@
 project Mieds is
 
-   for Object_Dir use "";
-   for Main use ("scanner_develop.adb", "parser_develop.adb");
+   type Mode_Type is
+      ("Production", "Debug");
+   Mode : Mode_Type := external ("BUILD", "Debug");
+
+   case Mode is
+
+      when "Production" =>
+
+      when "Debug" =>
+         for Source_Dirs use (".");
+         for Main use ("scanner_develop.adb", "parser_develop.adb");
+         for Object_Dir use "obj";
+         for Exec_Dir use "obj";
+   end case;
+
+   package Compiler is
+      case Mode is
+
+         when "Production" =>
+            for Default_Switches ("ada") use ("-gnatp", "-O2");
+
+         when "Debug" =>
+            for Default_Switches ("ada") use ("-g", "-gnato", "-fstack-check", "-gnatVa");
+      end case;
+   end Compiler;
+
+   package Ide is
+      for Vcs_Kind use "CVS";
+   end Ide;
+
+   package Builder is
+
+      case Mode is
+
+         when "Production" =>
+
+         when "Debug" =>
+            for Default_Switches ("ada") use ("-s");
+      end case;
+   end Builder;
+
+   package Check is
+
+      case Mode is
+
+         when "Production" =>
+
+         when "Debug" =>
+            for Default_Switches ("ada") use ("-d");
+      end case;
+   end Check;
 
 end Mieds;
 

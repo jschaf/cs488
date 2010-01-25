@@ -17,7 +17,8 @@ package body Scanner is
       Line_Number : in out Positive;
       Token       :    out Token_Type)
    is
-      Peek_Index := End_Index + 1;
+      Peek_Index : Natural := End_Index + 1;
+      
       function Peek return Character is
       begin
          if Peek_Index > S'Last then
@@ -31,9 +32,66 @@ package body Scanner is
       begin
          Peek_Index := Peek_Index + 1;
       end Advance;
+      
+      type State_Type is (Start, Saw_Alpha, Saw_Underscore, Saw_ID, Error);
+      
+      subtype Table_State_Type is State_Type range Start .. Saw_Underscore;
+      
+      type Transistion_Array is array (Table_State_Type, Character) of State_Type;
+      
+      Transistion_Table : Transistion_Array :=
+        (Start => 
+           ('a' .. 'z' | 'A' .. 'Z' => Saw_Alpha,
+            ' ' | HT                => Start,
+            others                  => Error),
+         
+         Saw_Alpha => 
+           ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
+            '_'                                  => Saw_Underscore,
+            ' ' | HT                             => Saw_ID,
+            others                               => Error),
+         
+         Saw_Underscore => 
+           ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
+            others                               => Error));
+      
+      type Action_Type is record
+         Advance : Boolean;
+         Return_Token : Token_Type;
+      end record;
+      
+      type Action_Array is array (State_Type) of Action_Type;
+      
+      Action_Table : Action_Array :=
+        (Saw_ID => (Advance => False, Return_Token => ID),
+         others => (Advance => True,  Return_Token => Illegal_Token));
+      
+      State, New_State : State_Type := Start;
+   
    begin
-      
-      
+      loop
+         New_State := Transistion_Table(State, Peek);
+         
+         if New_State = Error then
+            raise Unexepected_Character;
+         end if;
+         
+         if State = Start and New_State /= Start then
+            Start_Index := Peek_Index;
+         end if;
+         
+         if Action_Table(New_State).Advance then
+            Advance;
+         end if;
+         
+         if Action_Table(New_State).Return_Token /= Illegal_Token then
+            Token := Action_Table(New_State).Return_Token;
+            return;
+         end if;
+         
+         State := New_State;
+         
+      end loop;
    end Scan_Next_Token;
 
    -- Eliminate the leading space that Ada puts in front of positive

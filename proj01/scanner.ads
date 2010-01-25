@@ -4,7 +4,9 @@
 with Ada.Unchecked_Deallocation;
 
 package Scanner is
-
+   
+   Unexepected_Character : Exception;
+   
    -- Tokens recognized by the scanner.
    type Token_Type is
      (Keyword_Description, Keyword_Effectiveness, Keyword_Exponential,
@@ -13,7 +15,7 @@ package Scanner is
       Keyword_Route, Keyword_Schedule, Keyword_Segment, Keyword_Sensor,
       Keyword_Start, Keyword_Threat, Keyword_Trafficability, Keyword_Trip,
       Keyword_Uniform, Keyword_Vulnerability, Keyword_With,
-      Arrow, Id, Number,
+      Arrow, ID, Number,
       Left_Paren, Right_Paren, Plus, Minus, Underscore, Star, Slash, Tilde,
       Comma, Equals, Colon, Semi,
       End_Input, Illegal_Token);
