@@ -86,6 +86,7 @@ package body Scanner is
          
          if Action_Table(New_State).Return_Token /= Illegal_Token then
             Token := Action_Table(New_State).Return_Token;
+            -- Are we supposed to return keywords or just IDs?
             return;
          end if;
          
