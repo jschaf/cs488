@@ -4,8 +4,95 @@
 with Ada.Text_IO, Ada.Characters.Latin_1, Ada.Strings.Fixed;
 use  Ada.Text_IO, Ada.Characters.Latin_1, Ada.Strings.Fixed;
 
-package body Scanner is
+with Binary_Search;
 
+with Ada.Containers.Generic_Array_Sort;
+
+package body Scanner is
+   
+   -- Index subtype ranges over possible bounded string lengths.
+   subtype Keyword_Index_Type is Natural range 0 .. 24;
+
+   -- Keyword table entry takes string length as a discriminant, which
+   --  is a parameter for a _type_ rather than a procedure.
+   type Keyword_Tuple(Length : Keyword_Index_Type := 0) is
+      record
+         Value : String(1 .. Length);
+         Token : Token_Type;
+      end record;
+   
+   function Keyword_Less_Than 
+     (Left, Right : in Keyword_Tuple)
+     return Boolean 
+   is
+   begin
+      return Left.Value < Right.Value;
+   end Keyword_Less_Than;
+   
+   --  Function accepts string and token and returns a keyword table
+   --  entry all filled in with a string of correct length.
+   function Keyword_Entry 
+     (S     : in String; 
+      Token : in Token_Type)
+     return Keyword_Tuple 
+   is
+   begin
+      return Keyword_Tuple'(Length => S'Length, 
+                            Value  => S, 
+                            Token  => Token);
+   end Keyword_Entry;
+
+   type Keyword_Table_Type is
+     array(Positive range <>) of Keyword_Tuple;
+   
+   procedure Keyword_Sort is new Ada.Containers.Generic_Array_Sort
+     (Element_Type => Keyword_Tuple,
+      Index_Type   => Positive,
+      Array_Type   => Keyword_Table_Type,
+      "<"          => Keyword_Less_Than);
+   
+   function Key_Sort 
+     (Keys : in Keyword_Table_Type) 
+     return Keyword_Table_Type 
+   is
+      K : Keyword_Table_Type := Keys;
+   begin
+      Keyword_Sort(K);
+      return K;
+   end Key_Sort;
+   
+   -- Sort this just to play it safe.
+   Keyword_Table : constant Keyword_Table_Type :=
+     Key_Sort(  
+       (Keyword_Entry("description",     Keyword_Description),
+        Keyword_Entry("effectiveness",   Keyword_Effectiveness),
+        Keyword_Entry("exponential",     Keyword_Exponential),
+        Keyword_Entry("friend",          Keyword_Friend),
+        Keyword_Entry("instance",        Keyword_Instance),
+        Keyword_Entry("interval",        Keyword_Interval),
+        Keyword_Entry("normal",          Keyword_Normal),
+        Keyword_Entry("number",          Keyword_Number),
+        Keyword_Entry("point",           Keyword_Point),
+        Keyword_Entry("range",           Keyword_Range),
+        Keyword_Entry("responders",      Keyword_Responders),
+        Keyword_Entry("route",           Keyword_Route),
+        Keyword_Entry("schedule",        Keyword_Schedule),
+        Keyword_Entry("segment",         Keyword_Segment),
+        Keyword_Entry("sensor",          Keyword_Sensor),
+        Keyword_Entry("start",           Keyword_Start),
+        Keyword_Entry("threat",          Keyword_Threat),
+        Keyword_Entry("trafficability",  Keyword_Trafficability),
+        Keyword_Entry("trip",            Keyword_Trip),
+        Keyword_Entry("uniform",         Keyword_Uniform),
+        Keyword_Entry("vulnerability",   Keyword_Vulnerability),
+        Keyword_Entry("with",            Keyword_With)));
+                      
+   procedure Keyword_Search is new Binary_Search
+     (Element_Type => Keyword_Tuple,
+      Index_Type   => Positive,
+      Array_Type   => Keyword_Table_Type,
+      "<"          => Keyword_Less_Than);
+   
    ---------------------
    -- Scan_Next_Token --
    ---------------------
@@ -33,9 +120,29 @@ package body Scanner is
          Peek_Index := Peek_Index + 1;
       end Advance;
       
-      type State_Type is (Start, Saw_Alpha, Saw_Underscore, Saw_ID, Error);
+      type State_Type is 
+        (Start, 
+         Saw_Alpha, 
+         Saw_Underscore, 
+         Saw_ID,
+         Saw_Number,
+         Saw_Left_Paren,
+         Saw_Right_Paren,
+         Saw_Plus,
+         Saw_Minus,
+         Saw_Arrow,
+         Saw_Star,
+         Saw_Slash,
+         Saw_Tilde,
+         Saw_Comma,
+         Saw_Equals,
+         Saw_Colon,
+         Saw_Semi,
+         Saw_End_Input,
+         Error);
       
-      subtype Table_State_Type is State_Type range Start .. Saw_Underscore;
+      -- Exclude Error state.
+      subtype Table_State_Type is State_Type range Start .. Saw_End_Input;
       
       type Transistion_Array is array (Table_State_Type, Character) of State_Type;
       
@@ -43,6 +150,20 @@ package body Scanner is
         (Start => 
            ('a' .. 'z' | 'A' .. 'Z' => Saw_Alpha,
             ' ' | HT                => Start,
+            
+            '(' => Saw_Left_Paren,
+            ')' => Saw_Right_Paren,
+            '+' => Saw_Plus,
+            '-' => Saw_Minus,
+            '*' => Saw_Star,
+            '/' => Saw_Slash,
+            '~' => Saw_Tilde,
+            ',' => Saw_Comma,
+            '=' => Saw_Equals,
+            ':' => Saw_Colon,
+            ';' => Saw_Semi,
+            '$' => Saw_End_Input,
+            
             others                  => Error),
          
          Saw_Alpha => 
@@ -53,7 +174,30 @@ package body Scanner is
          
          Saw_Underscore => 
            ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
-            others                               => Error));
+            others                               => Error),
+         
+         Saw_ID     => (others => Start),
+         Saw_Number => (others => Start), -- XXX: Implement me
+         
+         -- Special case because a minus might be the start of an
+         -- arrow.
+         Saw_Minus => 
+           ('>'    => Saw_Arrow,
+            others => Start),
+         
+         Saw_Arrow       => (others => Start),
+         Saw_Left_Paren  => (others => Start),
+         Saw_Right_Paren => (others => Start),
+         Saw_Plus        => (others => Start),
+         Saw_Star        => (others => Start),
+         Saw_Slash       => (others => Start),
+         Saw_Tilde       => (others => Start),
+         Saw_Comma       => (others => Start),
+         Saw_Equals      => (others => Start),
+         Saw_Colon       => (others => Start),
+         Saw_Semi        => (others => Start),
+         Saw_End_Input   => (others => Start)
+        );
       
       type Action_Type is record
          Advance : Boolean;
@@ -64,9 +208,40 @@ package body Scanner is
       
       Action_Table : Action_Array :=
         (Saw_ID => (Advance => False, Return_Token => ID),
+         
+         Saw_Arrow       => (Advance => True, Return_Token => Arrow),
+         Saw_Left_Paren  => (Advance => True, Return_Token => Left_Paren),
+         Saw_Right_Paren => (Advance => True, Return_Token => Right_Paren),
+         Saw_Plus        => (Advance => True, Return_Token => Plus),
+         Saw_Star        => (Advance => True, Return_Token => Star),
+         Saw_Slash       => (Advance => True, Return_Token => Slash),
+         Saw_Tilde       => (Advance => True, Return_Token => Tilde),
+         Saw_Comma       => (Advance => True, Return_Token => Comma),
+         Saw_Equals      => (Advance => True, Return_Token => Equals),
+         Saw_Colon       => (Advance => True, Return_Token => Colon),
+         Saw_Semi        => (Advance => True, Return_Token => Semi),
+         Saw_End_Input   => (Advance => True, Return_Token => End_Input),
+
          others => (Advance => True,  Return_Token => Illegal_Token));
       
       State, New_State : State_Type := Start;
+      
+      function Keyword_Or_ID (Token : in Token_Type; 
+                              Start, Stop : in Natural) return Token_Type is
+         Str : String := S(Start .. Stop);
+      begin
+         if Token /= ID then
+            return Token;
+         end if;
+         
+         if Str = "description" then
+            return Keyword_Description;
+         elsif Str = "effectiveness" then
+            return Keyword_Effectiveness;
+         else
+            return ID;
+         end if;
+      end Keyword_Or_ID;
    
    begin
       loop
@@ -86,7 +261,7 @@ package body Scanner is
          
          if Action_Table(New_State).Return_Token /= Illegal_Token then
             Token := Action_Table(New_State).Return_Token;
-            -- Are we supposed to return keywords or just IDs?
+            -- XXX: Use Keyword Search
             return;
          end if;
          
