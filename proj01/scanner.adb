@@ -11,15 +11,15 @@ with Binary_Search;
 
 with Ada.Containers.Generic_Array_Sort;
 
+--  TODO
+--  Add comments
+
 package body Scanner is
    
-   -- Index subtype ranges over possible bounded string lengths.
-   subtype Keyword_Index_Type is Natural range 0 .. 24;
-   
-   MAX_KEYWORD_LENGTH : constant Natural := 24;
+   MAX_KEYWORD_LENGTH_C : constant Natural := 24;
    
    package SB is new Ada.Strings.Bounded.Generic_Bounded_Length
-     (Max => MAX_KEYWORD_LENGTH);
+     (Max => MAX_KEYWORD_LENGTH_C);
    
    --  To_Bounded_String is annoyingly long.
    function To_BS
@@ -28,9 +28,9 @@ package body Scanner is
      return SB.Bounded_String 
      renames SB.To_Bounded_String;
    
-   type Keyword_Array_type is array (Positive range <>) of SB.Bounded_String;
+   type Keyword_Array_T is array (Positive range <>) of SB.Bounded_String;
    
-   Keyword_Array : constant Keyword_Array_Type := 
+   KEYWORDS_C : constant Keyword_Array_T := 
      (To_BS("description"),
       To_BS("effectiveness"),
       To_BS("exponential"),
@@ -54,8 +54,8 @@ package body Scanner is
       To_BS("vulnerability"),
       To_BS("with"));
    
-   type Token_Array_Type is array (Positive range <>) of Token_type;
-   Token_Array : constant Token_Array_Type := 
+   type Token_Array_T is array (Positive range <>) of Token_type;
+   TOKENS_C : constant Token_Array_T := 
      (Keyword_Description,
       Keyword_Effectiveness,
       Keyword_Exponential,
@@ -82,7 +82,7 @@ package body Scanner is
    procedure Keyword_Search is new Binary_Search
      (Element_Type => SB.Bounded_String,
       Index_Type   => Positive,
-      Array_Type   => Keyword_Array_Type,
+      Array_Type   => Keyword_Array_T,
       "<"          => SB."<");
    
    ---------------------
@@ -112,7 +112,7 @@ package body Scanner is
          Peek_Index := Peek_Index + 1;
       end Advance;
       
-      type State_Type is 
+      type State_T is 
         (Start, 
          Saw_Alpha, 
          Saw_Underscore, 
@@ -137,9 +137,9 @@ package body Scanner is
          Error);
       
       -- Exclude Error state.
-      subtype Table_State_Type is State_Type range Start .. Saw_End_Input;
+      subtype Table_State_Type is State_T range Start .. Saw_End_Input;
       
-      type Transistion_Array is array (Table_State_Type, Character) of State_Type;
+      type Transistion_Array is array (Table_State_Type, Character) of State_T;
       
       Transistion_Table : Transistion_Array :=
         (Start => 
@@ -212,13 +212,13 @@ package body Scanner is
         );
       
       type Action_Type is record
-         Advance : Boolean;
+         Advance      : Boolean;
          Return_Token : Token_Type;
       end record;
       
-      type Action_Array is array (State_Type) of Action_Type;
+      type Action_Array is array (State_T) of Action_Type;
       
-      Action_Table : Action_Array :=
+      Action_Table : constant Action_Array :=
         (Saw_ID               => (Advance => False, Return_Token => ID),
          Saw_Alpha            => (Advance => True, Return_Token => Illegal_Token), 
          Saw_Underscore       => (Advance => True, Return_Token => Illegal_Token), 
@@ -245,15 +245,17 @@ package body Scanner is
 
          others => (Advance => True,  Return_Token => Illegal_Token));
       
-      State, New_State : State_Type := Start;
+      State, New_State : State_T := Start;
+      
+      --  For differentiating IDs and keywords
       Found_Keyword    : Boolean    := False;
       Keyword_Index    : Integer;
       Keyword          : SB.Bounded_String;
       Search_Keyword   : SB.Bounded_String;
+      
    begin
       loop
          New_State := Transistion_Table(State, Peek);
-         
          
          if New_State = Error then
             raise Unexepected_Character;
@@ -264,9 +266,11 @@ package body Scanner is
          end if;
          
          if Action_Table(New_State).Advance then
+            
             if Peek = LF then
                Line_Number := Line_Number + 1;
             end if;
+            
             Advance;
             End_Index := End_Index + 1;
          end if;
@@ -276,17 +280,17 @@ package body Scanner is
             
             Search_Keyword := To_BS(S(Start_Index .. End_Index));
               
-            Keyword_Search(Elements => Keyword_Array,
+            Keyword_Search(Elements => KEYWORDS_C,
                            Search   => Search_Keyword,
                            Found    => Found_Keyword,
                            Index    => Keyword_Index);
             
             if Found_Keyword then
-               Keyword := Keyword_Array(Keyword_Index);
-               Token   := Token_Array(Keyword_Index);
+               Keyword := KEYWORDS_C(Keyword_Index);
+               Token   := TOKENS_C(Keyword_Index);
             end if;
             
-            return;
+            exit;
          end if;
          
          State := New_State;
