@@ -12,6 +12,7 @@ procedure Scanner_Develop is
 begin
    Read_To_String("simple.sim", S);
    Put_Line(S.all);
+   
    loop
       Scan_Next_Token(S.all, Start_Index, End_Index, Line_Number, Token);
       if Line_Number > Last_Line_Number then

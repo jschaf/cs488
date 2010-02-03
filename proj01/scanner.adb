@@ -4,6 +4,9 @@
 with Ada.Text_IO, Ada.Characters.Latin_1, Ada.Strings.Fixed;
 use  Ada.Text_IO, Ada.Characters.Latin_1, Ada.Strings.Fixed;
 
+with Ada.Strings;
+with Ada.Strings.Bounded;
+
 with Binary_Search;
 
 with Ada.Containers.Generic_Array_Sort;
@@ -12,86 +15,75 @@ package body Scanner is
    
    -- Index subtype ranges over possible bounded string lengths.
    subtype Keyword_Index_Type is Natural range 0 .. 24;
-
-   -- Keyword table entry takes string length as a discriminant, which
-   --  is a parameter for a _type_ rather than a procedure.
-   type Keyword_Tuple(Length : Keyword_Index_Type := 0) is
-      record
-         Value : String(1 .. Length);
-         Token : Token_Type;
-      end record;
    
-   function Keyword_Less_Than 
-     (Left, Right : in Keyword_Tuple)
-     return Boolean 
-   is
-   begin
-      return Left.Value < Right.Value;
-   end Keyword_Less_Than;
+   MAX_KEYWORD_LENGTH : constant Natural := 24;
    
-   --  Function accepts string and token and returns a keyword table
-   --  entry all filled in with a string of correct length.
-   function Keyword_Entry 
-     (S     : in String; 
-      Token : in Token_Type)
-     return Keyword_Tuple 
-   is
-   begin
-      return Keyword_Tuple'(Length => S'Length, 
-                            Value  => S, 
-                            Token  => Token);
-   end Keyword_Entry;
-
-   type Keyword_Table_Type is
-     array(Positive range <>) of Keyword_Tuple;
+   package SB is new Ada.Strings.Bounded.Generic_Bounded_Length
+     (Max => MAX_KEYWORD_LENGTH);
    
-   procedure Keyword_Sort is new Ada.Containers.Generic_Array_Sort
-     (Element_Type => Keyword_Tuple,
-      Index_Type   => Positive,
-      Array_Type   => Keyword_Table_Type,
-      "<"          => Keyword_Less_Than);
+   --  To_Bounded_String is annoyingly long.
+   function To_BS
+     (Source : in String;
+      Drop   : in Ada.Strings.Truncation := Ada.Strings.Error)
+     return SB.Bounded_String 
+     renames SB.To_Bounded_String;
    
-   function Key_Sort 
-     (Keys : in Keyword_Table_Type) 
-     return Keyword_Table_Type 
-   is
-      K : Keyword_Table_Type := Keys;
-   begin
-      Keyword_Sort(K);
-      return K;
-   end Key_Sort;
+   type Keyword_Array_type is array (Positive range <>) of SB.Bounded_String;
    
-   -- Sort this just to play it safe.
-   Keyword_Table : constant Keyword_Table_Type :=
-     Key_Sort(  
-       (Keyword_Entry("description",     Keyword_Description),
-        Keyword_Entry("effectiveness",   Keyword_Effectiveness),
-        Keyword_Entry("exponential",     Keyword_Exponential),
-        Keyword_Entry("friend",          Keyword_Friend),
-        Keyword_Entry("instance",        Keyword_Instance),
-        Keyword_Entry("interval",        Keyword_Interval),
-        Keyword_Entry("normal",          Keyword_Normal),
-        Keyword_Entry("number",          Keyword_Number),
-        Keyword_Entry("point",           Keyword_Point),
-        Keyword_Entry("range",           Keyword_Range),
-        Keyword_Entry("responders",      Keyword_Responders),
-        Keyword_Entry("route",           Keyword_Route),
-        Keyword_Entry("schedule",        Keyword_Schedule),
-        Keyword_Entry("segment",         Keyword_Segment),
-        Keyword_Entry("sensor",          Keyword_Sensor),
-        Keyword_Entry("start",           Keyword_Start),
-        Keyword_Entry("threat",          Keyword_Threat),
-        Keyword_Entry("trafficability",  Keyword_Trafficability),
-        Keyword_Entry("trip",            Keyword_Trip),
-        Keyword_Entry("uniform",         Keyword_Uniform),
-        Keyword_Entry("vulnerability",   Keyword_Vulnerability),
-        Keyword_Entry("with",            Keyword_With)));
+   Keyword_Array : constant Keyword_Array_Type := 
+     (To_BS("description"),
+      To_BS("effectiveness"),
+      To_BS("exponential"),
+      To_BS("friend"),
+      To_BS("instance"),
+      To_BS("interval"),
+      To_BS("normal"),
+      To_BS("number"),
+      To_BS("point"),
+      To_BS("range"),
+      To_BS("responders"),
+      To_BS("route"),
+      To_BS("schedule"),
+      To_BS("segment"),
+      To_BS("sensor"),
+      To_BS("start"),
+      To_BS("threat"),
+      To_BS("trafficability"),
+      To_BS("trip"),
+      To_BS("uniform"),
+      To_BS("vulnerability"),
+      To_BS("with"));
+   
+   type Token_Array_Type is array (Positive range <>) of Token_type;
+   Token_Array : constant Token_Array_Type := 
+     (Keyword_Description,
+      Keyword_Effectiveness,
+      Keyword_Exponential,
+      Keyword_Friend,
+      Keyword_Instance,
+      Keyword_Interval,
+      Keyword_Normal,
+      Keyword_Number,
+      Keyword_Point,
+      Keyword_Range,
+      Keyword_Responders,
+      Keyword_Route,
+      Keyword_Schedule,
+      Keyword_Segment,
+      Keyword_Sensor,
+      Keyword_Start,
+      Keyword_Threat,
+      Keyword_Trafficability,
+      Keyword_Trip,
+      Keyword_Uniform,
+      Keyword_Vulnerability,
+      Keyword_With);
                       
    procedure Keyword_Search is new Binary_Search
-     (Element_Type => Keyword_Tuple,
+     (Element_Type => SB.Bounded_String,
       Index_Type   => Positive,
-      Array_Type   => Keyword_Table_Type,
-      "<"          => Keyword_Less_Than);
+      Array_Type   => Keyword_Array_Type,
+      "<"          => SB."<");
    
    ---------------------
    -- Scan_Next_Token --
@@ -126,6 +118,9 @@ package body Scanner is
          Saw_Underscore, 
          Saw_ID,
          Saw_Number,
+         Saw_Dot,
+         Saw_Digit_Before_Dot,
+         Saw_Digit_After_Dot,
          Saw_Left_Paren,
          Saw_Right_Paren,
          Saw_Plus,
@@ -149,7 +144,10 @@ package body Scanner is
       Transistion_Table : Transistion_Array :=
         (Start => 
            ('a' .. 'z' | 'A' .. 'Z' => Saw_Alpha,
-            ' ' | HT                => Start,
+            ' ' | HT | CR | LF      => Start,
+            
+            '0' .. '9' => Saw_Digit_Before_Dot,
+            '.'        => Saw_Dot,
             
             '(' => Saw_Left_Paren,
             ')' => Saw_Right_Paren,
@@ -163,13 +161,12 @@ package body Scanner is
             ':' => Saw_Colon,
             ';' => Saw_Semi,
             '$' => Saw_End_Input,
-            
-            others                  => Error),
+            others => Error),
          
          Saw_Alpha => 
            ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
             '_'                                  => Saw_Underscore,
-            ' ' | HT                             => Saw_ID,
+            ' ' | HT | CR | LF                   => Saw_ID,
             others                               => Error),
          
          Saw_Underscore => 
@@ -179,6 +176,21 @@ package body Scanner is
          Saw_ID     => (others => Start),
          Saw_Number => (others => Start), -- XXX: Implement me
          
+         Saw_Dot =>
+           ('0' .. '9' => Saw_Digit_After_Dot,
+            others     => Error),
+         
+         Saw_Digit_Before_Dot =>
+           ('0' .. '9' => Saw_Digit_Before_Dot,
+            '.'        => Saw_Dot,
+            others     => Saw_Number),
+         
+         Saw_Digit_After_Dot =>
+           ('0' .. '9' => Saw_Digit_After_Dot,
+            '.'        => Error,
+            others     => Saw_Number),
+         
+
          -- Special case because a minus might be the start of an
          -- arrow.
          Saw_Minus => 
@@ -207,8 +219,17 @@ package body Scanner is
       type Action_Array is array (State_Type) of Action_Type;
       
       Action_Table : Action_Array :=
-        (Saw_ID => (Advance => False, Return_Token => ID),
+        (Saw_ID               => (Advance => False, Return_Token => ID),
+         Saw_Alpha            => (Advance => True, Return_Token => Illegal_Token), 
+         Saw_Underscore       => (Advance => True, Return_Token => Illegal_Token), 
          
+         --  Numbers
+         Saw_Number           => (Advance => False, Return_Token => Number),
+         Saw_Dot              => (Advance => True, Return_Token => Illegal_Token), 
+         Saw_Digit_Before_Dot => (Advance => True, Return_Token => Illegal_Token), 
+         Saw_Digit_After_Dot  => (Advance => True, Return_Token => Illegal_Token), 
+         
+         --  Single characters
          Saw_Arrow       => (Advance => True, Return_Token => Arrow),
          Saw_Left_Paren  => (Advance => True, Return_Token => Left_Paren),
          Saw_Right_Paren => (Advance => True, Return_Token => Right_Paren),
@@ -220,32 +241,22 @@ package body Scanner is
          Saw_Equals      => (Advance => True, Return_Token => Equals),
          Saw_Colon       => (Advance => True, Return_Token => Colon),
          Saw_Semi        => (Advance => True, Return_Token => Semi),
-         Saw_End_Input   => (Advance => True, Return_Token => End_Input),
+         Saw_End_Input   => (Advance => False, Return_Token => End_Input),
 
          others => (Advance => True,  Return_Token => Illegal_Token));
       
       State, New_State : State_Type := Start;
-      
-      function Keyword_Or_ID (Token : in Token_Type; 
-                              Start, Stop : in Natural) return Token_Type is
-         Str : String := S(Start .. Stop);
-      begin
-         if Token /= ID then
-            return Token;
-         end if;
-         
-         if Str = "description" then
-            return Keyword_Description;
-         elsif Str = "effectiveness" then
-            return Keyword_Effectiveness;
-         else
-            return ID;
-         end if;
-      end Keyword_Or_ID;
-   
+      Found_Keyword    : Boolean    := False;
+      Keyword_Index    : Integer;
+      Keyword          : SB.Bounded_String;
+      Search_Keyword   : SB.Bounded_String;
    begin
       loop
          New_State := Transistion_Table(State, Peek);
+         
+         if Peek = LF then
+            Line_Number := Line_Number + 1;
+         end if;
          
          if New_State = Error then
             raise Unexepected_Character;
@@ -257,11 +268,24 @@ package body Scanner is
          
          if Action_Table(New_State).Advance then
             Advance;
+            End_Index := End_Index + 1;
          end if;
          
          if Action_Table(New_State).Return_Token /= Illegal_Token then
             Token := Action_Table(New_State).Return_Token;
-            -- XXX: Use Keyword Search
+            
+            Search_Keyword := To_BS(S(Start_Index .. End_Index));
+              
+            Keyword_Search(Elements => Keyword_Array,
+                           Search   => Search_Keyword,
+                           Found    => Found_Keyword,
+                           Index    => Keyword_Index);
+            
+            if Found_Keyword then
+               Keyword := Keyword_Array(Keyword_Index);
+               Token   := Token_Array(Keyword_Index);
+            end if;
+            
             return;
          end if;
          

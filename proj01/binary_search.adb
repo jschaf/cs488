@@ -4,10 +4,10 @@
 -- http://en.wikibooks.org/wiki/Algorithm_Implementation/Search/Binary_search
 
 procedure Binary_Search
-  (Elements : in Array_Type;
-   Search   : in Element_Type;
-   Found    : out Boolean;
-   Index    : out Index_Type'Base)
+  (Elements : in     Array_Type;
+   Search   : in     Element_Type;
+   Found    :    out Boolean;
+   Index    :    out Index_Type'Base)
 is
    Left  : Index_Type'Base := Elements'First;
    Right : Index_Type'Base := Elements'Last + 1;
@@ -18,10 +18,8 @@ begin
    else
       loop
          declare
-            Center    : constant Index_Type   :=
-              Left + (Right - Left) / 2;
-            Candidate : constant Element_Type :=
-              Elements (Center);
+            Center    : constant Index_Type   := Left + (Right - Left) / 2;
+            Candidate : constant Element_Type := Elements (Center);
          begin
             if Search = Candidate then
                Index := Center;
