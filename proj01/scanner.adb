@@ -54,7 +54,7 @@ package body Scanner is
       To_BS("vulnerability"),
       To_BS("with"));
    
-   type Token_Array_T is array (Positive range <>) of Token_type;
+   type Token_Array_T is array (Positive range <>) of Token_Type;
    TOKENS_C : constant Token_Array_T := 
      (Keyword_Description,
       Keyword_Effectiveness,
@@ -136,17 +136,22 @@ package body Scanner is
          Saw_End_Input,
          Error);
       
+      subtype Digit is Character range '0' .. '9';
+      subtype Letter_Upper is Character range 'a' .. 'z';
+      subtype Letter_Lower is Character range 'A' .. 'Z';
+
+      
       -- Exclude Error state.
-      subtype Table_State_Type is State_T range Start .. Saw_End_Input;
+      subtype Table_State_T is State_T range Start .. Saw_End_Input;
       
-      type Transistion_Array is array (Table_State_Type, Character) of State_T;
+      type Transistion_Array_T is array (Table_State_T, Character) of State_T;
       
-      Transistion_Table : Transistion_Array :=
+      TRANSISTION_TABLE_C : constant Transistion_Array_T :=
         (Start => 
-           ('a' .. 'z' | 'A' .. 'Z' => Saw_Alpha,
+           (Letter_lower | Letter_Upper => Saw_Alpha,
             ' ' | HT | CR | LF      => Start,
             
-            '0' .. '9' => Saw_Digit_Before_Dot,
+            Digit => Saw_Digit_Before_Dot,
             '.'        => Saw_Dot,
             
             '(' => Saw_Left_Paren,
@@ -164,29 +169,29 @@ package body Scanner is
             others => Error),
          
          Saw_Alpha => 
-           ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
+           (Letter_Lower | Letter_Upper | Digit  => Saw_Alpha,
             '_'                                  => Saw_Underscore,
             ' ' | HT | CR | LF                   => Saw_ID,
             others                               => Error),
          
          Saw_Underscore => 
-           ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' => Saw_Alpha,
+           (Letter_Lower | Letter_Upper | Digit  => Saw_Alpha,
             others                               => Error),
          
          Saw_ID     => (others => Start),
          Saw_Number => (others => Start), -- XXX: Implement me
          
          Saw_Dot =>
-           ('0' .. '9' => Saw_Digit_After_Dot,
+           (Digit => Saw_Digit_After_Dot,
             others     => Error),
          
          Saw_Digit_Before_Dot =>
-           ('0' .. '9' => Saw_Digit_Before_Dot,
+           (Digit => Saw_Digit_Before_Dot,
             '.'        => Saw_Dot,
             others     => Saw_Number),
          
          Saw_Digit_After_Dot =>
-           ('0' .. '9' => Saw_Digit_After_Dot,
+           (Digit => Saw_Digit_After_Dot,
             '.'        => Error,
             others     => Saw_Number),
          
@@ -211,14 +216,14 @@ package body Scanner is
          Saw_End_Input   => (others => Start)
         );
       
-      type Action_Type is record
+      type Action_T is record
          Advance      : Boolean;
          Return_Token : Token_Type;
       end record;
       
-      type Action_Array is array (State_T) of Action_Type;
+      type Action_Array_T is array (State_T) of Action_T;
       
-      Action_Table : constant Action_Array :=
+      Action_Table_C : constant Action_Array_T :=
         (Saw_ID               => (Advance => False, Return_Token => ID),
          Saw_Alpha            => (Advance => True, Return_Token => Illegal_Token), 
          Saw_Underscore       => (Advance => True, Return_Token => Illegal_Token), 
@@ -254,8 +259,10 @@ package body Scanner is
       Search_Keyword   : SB.Bounded_String;
       
    begin
+      
+      Scanner_Loop:
       loop
-         New_State := Transistion_Table(State, Peek);
+         New_State := TRANSISTION_TABLE_C(State, Peek);
          
          if New_State = Error then
             raise Unexepected_Character;
@@ -265,7 +272,7 @@ package body Scanner is
             Start_Index := Peek_Index;
          end if;
          
-         if Action_Table(New_State).Advance then
+         if ACTION_TABLE_C(New_State).Advance then
             
             if Peek = LF then
                Line_Number := Line_Number + 1;
@@ -275,8 +282,8 @@ package body Scanner is
             End_Index := End_Index + 1;
          end if;
          
-         if Action_Table(New_State).Return_Token /= Illegal_Token then
-            Token := Action_Table(New_State).Return_Token;
+         if ACTION_TABLE_C(New_State).Return_Token /= Illegal_Token then
+            Token := ACTION_TABLE_C(New_State).Return_Token;
             
             Search_Keyword := To_BS(S(Start_Index .. End_Index));
               
@@ -290,12 +297,12 @@ package body Scanner is
                Token   := TOKENS_C(Keyword_Index);
             end if;
             
-            exit;
+            exit Scanner_Loop;
          end if;
          
          State := New_State;
          
-      end loop;
+      end loop Scanner_Loop;
    end Scan_Next_Token;
 
    -- Eliminate the leading space that Ada puts in front of positive
