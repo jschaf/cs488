@@ -254,9 +254,6 @@ package body Scanner is
       loop
          New_State := Transistion_Table(State, Peek);
          
-         if Peek = LF then
-            Line_Number := Line_Number + 1;
-         end if;
          
          if New_State = Error then
             raise Unexepected_Character;
@@ -267,6 +264,9 @@ package body Scanner is
          end if;
          
          if Action_Table(New_State).Advance then
+            if Peek = LF then
+               Line_Number := Line_Number + 1;
+            end if;
             Advance;
             End_Index := End_Index + 1;
          end if;
