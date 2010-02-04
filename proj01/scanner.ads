@@ -4,11 +4,11 @@
 with Ada.Unchecked_Deallocation;
 
 package Scanner is
-   
-   Unexepected_Character : Exception;
-   
+
+   Unexepected_Character : exception;
+
    -- Tokens recognized by the scanner.
-   type Token_Type is
+   type Token_T is
      (Keyword_Description,
       Keyword_Effectiveness,
       Keyword_Exponential,
@@ -48,6 +48,7 @@ package Scanner is
       Colon,
       Semi,
       End_Input,
+      Incomplete_Token,
       Illegal_Token);
 
    -- Scan one token from the given string starting at End_Index+1
@@ -72,19 +73,20 @@ package Scanner is
       Start_Index :    out Positive;
       End_Index   : in out Natural;
       Line_Number : in out Positive;
-      Token       :    out Token_Type);
+      Token       :    out Token_T);
 
    -- For debugging purposes, this prints scanned token information to
    -- the screen.
-   procedure Put_Scanned_Token(S : in String;
-                               Start_Index : in Positive;
-                               End_Index : in Natural;
-                               Line_Number : in Positive;
-                               Token : in Token_Type;
-                               Indent : in Natural := 0);
+   procedure Put_Scanned_Token 
+     (S           : in String;
+      Start_Index : in Positive;
+      End_Index   : in Natural;
+      Line_Number : in Positive;
+      Token       : in Token_T;
+      Indent      : in Natural  := 0);
 
-   subtype Buffer_Type is String;
-   type Buffer_Ptr_Type is access String;
+   subtype Buffer_T is String;
+   type Buffer_A is access Buffer_T;
 
    -- Read an entire file into a single string.  Lines are separated by
    -- the "line feed character".  If you say
@@ -99,12 +101,7 @@ package Scanner is
    -- when LF =>  ... do what you want when peek is a line feed ...
    --
    procedure Read_To_String
-     (File_Name : in String;
-      S : out Buffer_Ptr_Type);
-
-   -- Free the buffer string returned by the procedure above.
-   procedure Free is new Ada.Unchecked_Deallocation (
-      Buffer_Type,
-      Buffer_Ptr_Type);
+     (File_Name : in     String;
+      S         :    out Buffer_A);
 
 end Scanner;

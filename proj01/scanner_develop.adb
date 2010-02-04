@@ -10,7 +10,7 @@ procedure Scanner_Develop is
    End_Index : Natural := 0;
    Token : Token_Type;
 begin
-   Read_To_String("simple.sim", S);
+   Read_To_String("example.sim", S);
    Put_Line(S.all);
    
    loop
