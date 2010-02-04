@@ -1,0 +1,29 @@
+-- Implementation details should be unimportant for this project
+-RPredefined_Numeric_Types
+
+-- Adds too much verbosity when creating syntax tables
+-RNon_Qualified_Aggregates
+-ROTHERS_In_Aggregates
+
+-- Style checks
++RStyle_Checks:3     -- Specify indentation level
++RStyle_Checks:a     -- Check attribute casing
++RStyle_Checks:A     -- Use of array index numbers in array attributes
++RStyle_Checks:b     -- Blanks not allowed at statement end
+-- +RStyle_Checks:c     -- Check comments
++RStyle_Checks:e     -- Check end/exit labels
++RStyle_Checks:f     -- No form feeds or vertical tabs
++RStyle_Checks:h     -- No horizontal tabs
++RStyle_Checks:i     -- Check if-then layout
++RStyle_Checks:k     -- Check keyword casing
++RStyle_Checks:l     -- Check layout
++RStyle_Checks:m     -- Check max line length (80 by default)
++RStyle_Checks:n     -- Check casing of entities in Standard
++RStyle_Checks:p     -- Check pragma casing
++RStyle_Checks:r     -- Check references
++RStyle_Checks:s     -- Check separate specs
+
+-- I don't like Ada's quirky spacing fetish
+-- +RStyle_Checks:t     -- Check token spacing
+
++RStyle_Checks:x     -- Check extra parens around boolean expressions
