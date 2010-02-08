@@ -1,20 +1,17 @@
---  Model IED Simulator
---  COL Gene Ressler, 1 December 2007
-
-with Ada.Text_IO;
-
-with Ada.Characters.Latin_1;
-use  Ada.Characters.Latin_1;
-
-with Ada.Strings.Fixed;
-use  Ada.Strings.Fixed;
+-- Model IED Simulator
+-- COL Gene Ressler, 1 December 2007
 
 with Ada.Strings;
+with Ada.Containers.Generic_Array_Sort;
 with Ada.Strings.Bounded;
+
+with Ada.Characters.Latin_1;   use Ada.Characters.Latin_1;
+with Ada.Strings.Fixed;        use Ada.Strings.Fixed;
+with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
+with Ada.Text_IO;              use Ada.Text_IO;
 
 with Binary_Search;
 
-with Ada.Containers.Generic_Array_Sort;
 
 package body Scanner is
 
@@ -25,7 +22,7 @@ package body Scanner is
    package SB is new Ada.Strings.Bounded.Generic_Bounded_Length
      (Max => MAX_KEYWORD_LENGTH_C);
 
-   --  To_Bounded_String is annoyingly long.
+   -- To_Bounded_String is annoyingly long.
    function To_BS (Source : in String) return SB.Bounded_String is
    begin
       return SB.To_Bounded_String(Source => Source);
@@ -176,8 +173,8 @@ package body Scanner is
          others => Saw_Number),
 
 
-      --  Special case because a minus might be the start of an
-      --  arrow or comment
+      -- Special case because a minus might be the start of an
+      -- arrow or comment
       Saw_Dash =>
         ('>'    => Saw_Arrow,
          '-'    => Saw_Comment,
@@ -229,7 +226,7 @@ package body Scanner is
       Saw_Underscore => (Advance => True,  Return_Token => Incomplete_Token),
       Saw_ID         => (Advance => False, Return_Token => ID),
 
-      --  Numbers
+      -- Numbers
       Saw_Number           => (Advance => False, Return_Token => Number),
       Saw_Dot              => (Advance => True,
                                Return_Token => Incomplete_Token),
@@ -238,13 +235,13 @@ package body Scanner is
       Saw_Digit_After_Dot  => (Advance => True,
                                Return_Token => Incomplete_Token),
 
-      --  Beginning with a dash
+      -- Beginning with a dash
       Saw_Dash    => (Advance => True,  Return_Token => Incomplete_Token),
       Saw_Comment => (Advance => True,  Return_Token => Incomplete_Token),
       Saw_Arrow   => (Advance => True,  Return_Token => Arrow),
       Saw_Minus   => (Advance => False, Return_Token => Minus),
 
-      --  Single characters
+      -- Single characters
       Saw_Left_Paren  => (Advance => True,  Return_Token => Left_Paren),
       Saw_Right_Paren => (Advance => True,  Return_Token => Right_Paren),
       Saw_Plus        => (Advance => True,  Return_Token => Plus),
@@ -257,9 +254,9 @@ package body Scanner is
       Saw_Semi        => (Advance => True,  Return_Token => Semi),
       Saw_End_Input   => (Advance => False, Return_Token => End_Input),
 
-      Begin_Error  => (Advance => False,  Return_Token => Incomplete_Token),
-      Middle_Error => (Advance => True,   Return_Token => Incomplete_Token),
-      End_Error    => (Advance => False,  Return_Token => Illegal_Token)
+      Begin_Error  => (Advance => False, Return_Token => Incomplete_Token),
+      Middle_Error => (Advance => True,  Return_Token => Incomplete_Token),
+      End_Error    => (Advance => False, Return_Token => Illegal_Token)
      );
 
    ---------------------
@@ -294,7 +291,7 @@ package body Scanner is
 
       Return_Token : Token_T;
 
-      --  For differentiating IDs and keywords
+      -- For differentiating IDs and keywords
       Found_Keyword    : Boolean    := False;
       Keyword_Index    : Integer;
       Keyword          : SB.Bounded_String;
@@ -316,25 +313,23 @@ package body Scanner is
          end if;
 
          if ACTION_TABLE_C(New_State).Advance then
-
             if Peek = LF then
                Line_Number := Line_Number + 1;
             end if;
-
             Advance;
             End_Index := End_Index + 1;
          end if;
 
          Return_Token := ACTION_TABLE_C(New_State).Return_Token;
 
-         --  Beware of DeMorgan
+         -- Beware of DeMorgan
          if (Return_Token /= Incomplete_Token
                and Return_Token /= Illegal_Token) then
             Token := Return_Token;
 
-            --  Don't check strings that are longer than the max
-            --  keyword length because they obviously cannot be
-            --  keywords.
+            -- Don't check strings that are longer than the max
+            -- keyword length because they obviously cannot be
+            -- keywords.
             if (End_Index - Start_Index) > MAX_KEYWORD_LENGTH_C then
                exit Scanner_Loop;
             end if;
@@ -390,13 +385,10 @@ package body Scanner is
      (Buffer_T, Buffer_A);
 
 
-   --  Slurp an entire file into a buffer.  Return a pointer to the
-   --  buffer string or null of the file could not be opened.  Lines
-   --  are separated with Ada.Characters.Latin_1.LF characters.
-   procedure Read_To_String
-     (File_Name : in String;
-      S : out Buffer_A)
-   is
+   -- Slurp an entire file into a buffer.  Return a pointer to the
+   -- buffer string or null of the file could not be opened.  Lines
+   -- are separated with Ada.Characters.Latin_1.LF characters.
+   function Read_To_String (File_Name : in Buffer_T) return Buffer_A is
       F : T_IO.File_Type;
       Buf : Buffer_A;
       Last_Index, Get_Index : Natural := 0;
@@ -415,7 +407,9 @@ package body Scanner is
            Buf := Tmp;
          end if;
       end Extend_Buffer;
-
+      
+      S : Buffer_A;
+      
    begin
       T_IO.Open(F, T_IO.In_File, File_Name);
       -- Allocate initial buffer.
@@ -444,9 +438,29 @@ package body Scanner is
       S := new String'(Buf(1 .. Last_Index));
       Free(Buf);
       T_IO.Close(F);
+      return S;
    exception
       when T_IO.Name_Error =>
          S := null;
+         return S;
    end Read_To_String;
-
+   
+   
+   procedure Copy_File(Source_File : in File_Type;
+                       Dest_File   : in File_Type) is
+      Infile, Outfile : File_Type;
+   begin
+     Create (File => Standard_Input, Mode => Out_File, Name => "output.txt");
+                       
+                       
+                       Open(File => Infile, Mode => In_File, Name => "input.txt");
+      loop
+         Character'Write (Stream (Outfile), Character'Input (Stream (Infile)));
+      end loop;
+   exception
+   when T_IO.End_Error =>
+      Close (Infile);
+      Close (Outfile);
+   end File_IO;
+   
 end Scanner;

@@ -5,12 +5,12 @@ with Scanner;
 use  Scanner;
 
 procedure Scanner_Develop is
-   S : Buffer_A;
+   S : Buffer_A := Read_To_String("example.sim");
    Start_Index, Line_Number, Last_Line_Number : Positive := 1;
    End_Index : Natural := 0;
    Token : Token_T;
 begin
-   Read_To_String("example.sim", S);
+   
    Put_Line(S.all);
    
    loop

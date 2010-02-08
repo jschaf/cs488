@@ -5,12 +5,9 @@ with Scanner, Parser;
 use  Scanner, Parser;
 
 procedure Parser_Develop is
-   S : Buffer_A;
-   Tree : Node_A;
+   S : Buffer_A := Read_To_String("example.sim");
+   Tree : Node_Ptr_Type;
 begin
-   -- Read the example file to a string.
-   Read_To_String("example.sim", S);
-
    -- Run the parser on it.
    Parse(S          => S.all,
          Rtn_Tree   => Tree,
