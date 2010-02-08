@@ -201,8 +201,8 @@ package body Scanner is
       Saw_End_Input   => (others => Start),
 
       Begin_Error =>
-        (' ' | HT | CR | LF => End_Error,
-         others             => Middle_Error),
+        (' ' | '$' | HT | CR | LF => End_Error,
+         others                   => Middle_Error),
 
       Middle_Error =>
         (' ' | HT | CR | LF => End_Error,
