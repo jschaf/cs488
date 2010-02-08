@@ -100,8 +100,6 @@ package Scanner is
    -- case Peek is
    -- when LF =>  ... do what you want when peek is a line feed ...
    --
-   procedure Read_To_String
-     (File_Name : in     String;
-      S         :    out Buffer_A);
+   function Read_To_String (File_Name : in Buffer_T) return Buffer_A;
 
 end Scanner;
