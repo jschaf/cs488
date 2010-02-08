@@ -445,22 +445,4 @@ package body Scanner is
          return S;
    end Read_To_String;
    
-   
-   procedure Copy_File(Source_File : in File_Type;
-                       Dest_File   : in File_Type) is
-      Infile, Outfile : File_Type;
-   begin
-     Create (File => Standard_Input, Mode => Out_File, Name => "output.txt");
-                       
-                       
-                       Open(File => Infile, Mode => In_File, Name => "input.txt");
-      loop
-         Character'Write (Stream (Outfile), Character'Input (Stream (Infile)));
-      end loop;
-   exception
-   when T_IO.End_Error =>
-      Close (Infile);
-      Close (Outfile);
-   end File_IO;
-   
 end Scanner;

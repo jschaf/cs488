@@ -5,8 +5,8 @@ with Scanner, Parser;
 use  Scanner, Parser;
 
 procedure Parser_Develop is
-   S : Buffer_A := Read_To_String("example.sim");
-   Tree : Node_Ptr_Type;
+   S    : Buffer_A := Read_To_String("example.sim");
+   Tree : Node_A;
 begin
    -- Run the parser on it.
    Parse(S          => S.all,
