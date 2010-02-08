@@ -203,10 +203,14 @@ package body Scanner is
       Begin_Error =>
         (' ' | '$' | HT | CR | LF => End_Error,
          others                   => Middle_Error),
-
+      
+      -- The only the difference between this and Begin_Error is that
+      --  Middle_Error consumes input (i.e. advance).  We need two
+      --  states so we don't consume a space, newline, tab etc. when
+      --  the illegal token is only a single character.
       Middle_Error =>
-        (' ' | HT | CR | LF => End_Error,
-         others             => Middle_Error),
+        (' ' | '$' | HT | CR | LF => End_Error,
+         others                   => Middle_Error),
 
       End_Error => (others => Start)
 
