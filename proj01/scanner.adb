@@ -411,7 +411,14 @@ package body Scanner is
       S : Buffer_A;
       
    begin
-      T_IO.Open(F, T_IO.In_File, File_Name);
+      Check_File:
+      begin
+         T_IO.Open(F, T_IO.In_File, File_Name);
+      exception
+      when T_IO.Name_Error =>
+         raise T_IO.Name_Error with "file doesn't exist";
+      end Check_File;
+      
       -- Allocate initial buffer.
       Buf := new String(1 .. 2);
       -- First get_line starts at position 1.
@@ -439,10 +446,6 @@ package body Scanner is
       Free(Buf);
       T_IO.Close(F);
       return S;
-   exception
-      when T_IO.Name_Error =>
-         S := null;
-         return S;
    end Read_To_String;
    
 end Scanner;
