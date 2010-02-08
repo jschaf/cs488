@@ -12,7 +12,6 @@ with Ada.Text_IO;              use Ada.Text_IO;
 
 with Binary_Search;
 
-
 package body Scanner is
 
    package T_IO renames Ada.Text_IO;
@@ -22,7 +21,8 @@ package body Scanner is
    package SB is new Ada.Strings.Bounded.Generic_Bounded_Length
      (Max => MAX_KEYWORD_LENGTH_C);
 
-   -- To_Bounded_String is annoyingly long.
+   -- To_Bounded_String is annoyingly long and To_BS is much more
+   -- humorous.
    function To_BS (Source : in String) return SB.Bounded_String is
    begin
       return SB.To_Bounded_String(Source => Source);
