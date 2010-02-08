@@ -5,8 +5,8 @@ with Scanner, Parser;
 use  Scanner, Parser;
 
 procedure Parser_Develop is
-   S : Buffer_Ptr_Type;
-   Tree : Node_Ptr_Type;
+   S : Buffer_A;
+   Tree : Node_A;
 begin
    -- Read the example file to a string.
    Read_To_String("example.sim", S);

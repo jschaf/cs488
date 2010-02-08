@@ -54,7 +54,7 @@ package body Parser is
 
    procedure Parse
      (S          : in String;
-      Rtn_Tree   : out Node_Ptr_Type;
+      Rtn_Tree   : out Node_A;
       Debug_Mode : in Boolean := False)
    is
 
@@ -79,7 +79,7 @@ package body Parser is
       procedure Debug_Token(Start_Index : in Positive;
                             End_Index : in Natural;
                             Line_Number : in Positive;
-                            Token : in Token_Type) is
+                            Token : in Token_T) is
       begin
          if Debug_Mode then
             Put_Scanned_Token(S, Start_Index, End_Index, Line_Number,
@@ -92,7 +92,7 @@ package body Parser is
       Start_Index : Positive   := 1;  -- Start of token string.
       End_Index   : Natural    := 0;  -- End of token string.
       Line_Number : Positive   := 1;
-      Look_Ahead  : Token_Type := End_Input; -- Enumerated type of token.
+      Look_Ahead  : Token_T := End_Input; -- Enumerated type of token.
 
       -- Return the current lookahead token string by slicing the input.
       function Token_String return String is
@@ -110,13 +110,13 @@ package body Parser is
 
       -- Make sure the next token in the lookahead matches one we specify.  If
       -- not, signal a syntax error.
-      procedure Match (Token : in Token_Type) is
+      procedure Match (Token : in Token_T) is
       begin
          if Look_Ahead = Token then
             Advance;
          else
             raise Syntax_Error
-              with "expected a " & To_Lower (Token_Type'Image (Token));
+              with "expected a " & To_Lower (Token_T'Image (Token));
          end if;
       end Match;
 
