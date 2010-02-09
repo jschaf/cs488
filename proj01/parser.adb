@@ -121,9 +121,9 @@ package body Parser is
       end Match;
 
       procedure Model;
-      procedure Description_Section_Head;
-      procedure Description_Section_Tail;
-      procedure Named_Description;
+      procedure Description_Section;
+      procedure Named_Description_Head;
+      procedure Named_Description_Tail;
       procedure Parameter_List;
       procedure Parameter;
       procedure Type_Id;
@@ -171,14 +171,23 @@ package body Parser is
          Debug ("-Description_Section");
       end Description_Section;
 
-      --  3. <named-description> --> ID [(<parameter-list>)] = <description> ;
-      procedure Named_Description is
+      --  3. <named-description-head> --> ID [(<parameter-list>)] <named-description-tail>
+      procedure Named_Description_Head is
       begin
-         Debug ("+Named_Description");
+         Debug ("+Named_Description_Head");
          -- to be completed!
-         Debug ("-Named_Description");
-      end Named_Description;
+         Debug ("-Named_Description_Head");
+      end Named_Description_Head;
+      
+      --  3. <named-description> --> = <description> ; | : <description> ;
+      procedure Named_Description_Tail is
+      begin
+         Debug ("+Named_Description_Tail");
+         -- to be completed!
+         Debug ("-Named_Description_Tail");
+      end Named_Description_Tail;
 
+      
       --  4. <parameter-list> --> <parameter> {, <parameter> }
       procedure Parameter_List is
       begin
@@ -320,7 +329,14 @@ package body Parser is
          -- to be completed!
          Debug ("-Attribute_Pair");
       end Attribute_Pair;
-
+      
+      procedure ID_List is
+      begin
+         Debug ("+ID_List");
+         -- to be completed
+         Debug ("-ID_List");
+      end ID_List;
+      
       --  22. <instance-section> --> instance <instance> { <instance> }
       procedure Instance_Section is
       begin
@@ -336,7 +352,14 @@ package body Parser is
          -- to be completed!
          Debug ("-Instance");
       end Instance;
-
+      
+      procedure Expr_List is
+      begin
+         Debug ("+Expr_List");
+         -- to be completed
+         Debug ("-Expr_List");
+      end Expr_List;
+        
       --  25. <expr-attribute-name> --> trafficability | vulnerability | range
       --                         | effectiveness | schedule | start | interval
       procedure Expr_Attribute_Name is
@@ -380,7 +403,28 @@ package body Parser is
          -- to be completed!
          Debug ("-Factor");
       end Factor;
-
+      
+      procedure Random_Var is
+      begin
+         Debug ("+Random_Var");
+         -- to be completed
+         Debug ("-Random_Var");
+      end Random_Var;
+      
+      procedure Add_Op is
+      begin
+         Debug ("+Add_Op");
+         -- to be completed
+         Debug ("-Add_Op");
+      end Add_Op;
+      
+      procedure Mul_Op is
+      begin
+         Debug ("+Mul_Op");
+         -- to be completed
+         Debug ("-Mul_Op");
+      end Mul_Op;
+      
    -- Parse the input string as a TL command.  Raise a Syntax_Error exception
    -- if parsing fails.  Scanner may also raise Bad_Character if it sees
    -- a character it does not know.  Return a syntax tree for the input
