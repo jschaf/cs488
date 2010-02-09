@@ -11,7 +11,7 @@ procedure Scanner_Develop is
    Token : Token_T;
 begin
    
-   --  Put_Line(S.all);
+   PutLine(S.all);
    
    loop
       Scan_Next_Token(S.all, Start_Index, End_Index, Line_Number, Token);
