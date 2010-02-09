@@ -48,10 +48,112 @@
 with Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
 use Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
 
+with Ada.Containers.Doubly_Linked_Lists;
+
 with Scanner; use Scanner;
 
 package body Parser is
-
+   
+   type Nonterminal_T is 
+     (Model,
+      Description_Section,
+      Named_Description_Head,
+      Named_Description_Tail,
+      Parameter_List,
+      Parameter,
+      Type_ID,
+      Description,
+      Point_Description,
+      Segment_Description,
+      Route_Description,
+      Segment_List,
+      Segment_ID,
+      Friend_Description,
+      Trip_Description,
+      Threat_Description,
+      Schedule_Description,
+      Sensor_Description,
+      With_Attributes,
+      Attribute_List,
+      Attribute_Pair,
+      ID_List,
+      Instance_Section,
+      Instance,
+      Expr_List,
+      Expr_Attribute_Name,
+      Expr,
+      Term,
+      Signed_Factor,
+      Factor,
+      Random_Var,
+      Add_Op,
+      Mul_Op);
+   
+   package Token_List is new Ada.Containers.Doubly_Linked_Lists(Token_T);
+   
+   type Token_Array_T is array (Positive range <>) of Token_T;
+   
+   function To_Token_List
+     (Token_Array : in Token_Array_T)
+     return Token_List.List
+   is
+      Tokens : Token_List.List := Token_List.Empty_List;
+   begin
+      for I in Token_Array'Range loop
+         Tokens.Append(Token_Array(I));
+      end loop;
+      return Tokens;
+   end To_Token_List;
+   
+   function To_TL
+     (Token_Array : in Token_Array_T)
+     return Token_List.List 
+     renames To_Token_List;
+   
+   -- XXX: Get rid of range <>
+   type First_Set_Array_T is array (Nonterminal_T range <>) of Token_List.List;
+   
+   FIRST_SET_C : constant First_Set_Array_T := 
+     (Model                  => To_TL( (Keyword_Description, End_Input)),
+      Description_Section    => To_TL( (1 => Keyword_Description)),
+      Named_Description_Head => To_TL( (1 => ID)),
+      Named_Description_Tail => To_TL( (Colon, Equals)),
+      Parameter_List         => To_TL( (1 => ID)),
+      Parameter              => To_TL( (1 => ID)),
+      Type_ID                => To_TL( (Keyword_Number, Keyword_Point,
+                                        Keyword_Segment, Keyword_Route,
+                                        Keyword_Friend, Keyword_Friend,
+                                        Keyword_Schedule, Keyword_Sensor))
+      
+      --  Description            => To_TL( ()),
+      --  Point_Description      => To_TL( (1 => Left_Paren)),
+      --  Segment_Description    => To_TL( (1 => Keyword_Segment)),
+      --  Route_Description      => To_TL( (1 => Keyword_Route)),
+      --  Segment_List           => To_TL( (ID, Tilde)),
+      --  Segment_ID             => To_TL( (ID, Tilde)),
+      --  Friend_Description     => To_TL( (1 => Keyword_Friend)),
+      --  Trip_Description       => To_TL( (1 => Keyword_Trip)),
+      --  Threat_Description     => To_TL( (1 => Keyword_Threat)),
+      --  Schedule_Description   => To_TL( (1 => Keyword_Schedule)),
+      --  Sensor_Description     => To_TL( (1 => Keyword_Sensor)),
+      --  With_Attributes        => To_TL( (1 => Keyword_With)),
+      --  Attribute_List         => To_TL( ()),
+      --  Attribute_Pair         => To_TL( ()),
+      --  ID_List                => To_TL( (1 => ID)),
+      --  Instance_Section       => To_TL( (1 => Keyword_Instance)),
+      --  Instance               => To_TL( (1 => ID)),
+      --  Expr_List              => To_TL( ()),
+      --  Expr_Attribute_Name    => To_TL( ()),
+      --  Expr                   => To_TL( ()),
+      --  Term                   => To_TL( ()),
+      --  Signed_Factor          => To_TL( ()),
+      --  Factor                 => To_TL( ()),
+      --  Random_Var             => To_TL( ()),
+      --  Add_Op                 => To_TL( ()),
+      --  Mul_Op
+     );
+   
+   
    procedure Parse
      (S          : in String;
       Rtn_Tree   : out Node_A;
@@ -126,13 +228,13 @@ package body Parser is
       procedure Named_Description_Tail;
       procedure Parameter_List;
       procedure Parameter;
-      procedure Type_Id;
+      procedure Type_ID;
       procedure Description;
       procedure Point_Description;
       procedure Segment_Description;
       procedure Route_Description;
       procedure Segment_List;
-      procedure Segment_Id;
+      procedure Segment_ID;
       procedure Friend_Description;
       procedure Trip_Description;
       procedure Threat_Description;
@@ -206,12 +308,12 @@ package body Parser is
 
       --  6. <type-id> --> number | point | segment | route | friend | schedule
       --             | sensor
-      procedure Type_Id is
+      procedure Type_ID is
       begin
          Debug ("+Type_Id");
          -- to be completed!
          Debug ("-Type_Id");
-      end Type_Id;
+      end Type_ID;
 
       --  7. <description> --> <expr>
       --                     | <segment-description> | <point-description>
@@ -258,12 +360,12 @@ package body Parser is
       end Segment_List;
 
       --  12. <segment-id> --> ID | ~ ID
-      procedure Segment_Id is
+      procedure Segment_ID is
       begin
          Debug ("+Segment_Id");
          -- to be completed!
          Debug ("-Segment_Id");
-      end Segment_Id;
+      end Segment_ID;
 
       --  13. <friend-description> --> friend <expr> [ <with-attributes> ]
       procedure Friend_Description is
