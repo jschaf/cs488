@@ -3,6 +3,7 @@
 
 with Ada.Strings;
 with Ada.Containers.Generic_Array_Sort;
+with Ada.Containers.Vectors;
 with Ada.Strings.Bounded;
 
 with Ada.Characters.Latin_1;   use Ada.Characters.Latin_1;
@@ -213,8 +214,8 @@ package body Scanner is
       
       -- The only the difference between this and Begin_Error is that
       -- Middle_Error consumes input (i.e. advance).  We need two
-      -- states so we don't consume a space, newline, tab etc. when
-      -- the illegal token is only a single character.
+      -- states so we don't consume whitespace when the illegal token
+      -- is only a single character.
       Middle_Error =>
         (' ' | '$' | HT | CR | LF => End_Error,
          others                   => Middle_Error),
@@ -395,7 +396,13 @@ package body Scanner is
    procedure Free is new Ada.Unchecked_Deallocation 
      (Buffer_T, Buffer_A);
 
-
+   
+   package String_Vector is new Ada.Containers.Vectors
+     (Index_Type   => Positive,
+      Element_Type => Character);
+   
+   
+   
    -- Slurp an entire file into a buffer.  Return a pointer to the
    -- buffer string or null of the file could not be opened.  Lines
    -- are separated with Ada.Characters.Latin_1.LF characters.
