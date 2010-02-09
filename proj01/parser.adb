@@ -121,9 +121,9 @@ package body Parser is
       Parameter_List         => TL( (1 => ID)),
       Parameter              => TL( (1 => ID)),
       Type_ID                => TL( (Keyword_Number, Keyword_Point,
-                                        Keyword_Segment, Keyword_Route,
-                                        Keyword_Friend, Keyword_Friend,
-                                        Keyword_Schedule, Keyword_Sensor))
+                                     Keyword_Segment, Keyword_Route,
+                                     Keyword_Friend, Keyword_Friend,
+                                     Keyword_Schedule, Keyword_Sensor))
       
       --  Description            => TL( ()),
       --  Point_Description      => TL( (1 => Left_Paren)),
