@@ -53,7 +53,14 @@ package body Scanner is
       To_BS("uniform"),
       To_BS("vulnerability"),
       To_BS("with"));
-
+   
+   -- BLUF: Using separate arrays is a quick, easy, but dirty hack.
+   
+   -- If this does not match with KEYWORDS_C we're out of luck.
+   -- TOKENS_C and KEYWORDS_C are decoupled because the Binary_Search
+   -- package doesn't take an equal function.  Thus, we can't provide
+   -- a custom equality test to check specific fields (This could
+   -- probably be done with Finalization).
    type Token_Array_T is array (Positive range <>) of Token_T;
    TOKENS_C : constant Token_Array_T :=
      (Keyword_Description,
@@ -205,9 +212,9 @@ package body Scanner is
          others                   => Middle_Error),
       
       -- The only the difference between this and Begin_Error is that
-      --  Middle_Error consumes input (i.e. advance).  We need two
-      --  states so we don't consume a space, newline, tab etc. when
-      --  the illegal token is only a single character.
+      -- Middle_Error consumes input (i.e. advance).  We need two
+      -- states so we don't consume a space, newline, tab etc. when
+      -- the illegal token is only a single character.
       Middle_Error =>
         (' ' | '$' | HT | CR | LF => End_Error,
          others                   => Middle_Error),
