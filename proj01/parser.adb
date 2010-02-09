@@ -121,7 +121,8 @@ package body Parser is
       end Match;
 
       procedure Model;
-      procedure Description_Section;
+      procedure Description_Section_Head;
+      procedure Description_Section_Tail;
       procedure Named_Description;
       procedure Parameter_List;
       procedure Parameter;
@@ -140,13 +141,18 @@ package body Parser is
       procedure With_Attributes;
       procedure Attribute_List;
       procedure Attribute_Pair;
+      procedure ID_List;
       procedure Instance_Section;
       procedure Instance;
+      procedure Expr_List;
       procedure Expr_Attribute_Name;
       procedure Expr;
       procedure Term;
       procedure Signed_Factor;
       procedure Factor;
+      procedure Random_Var;
+      procedure Add_Op;
+      procedure Mul_Op;
 
       --  1. <model> --> { <description-section> <instance-section> } EOF
       procedure Model is
