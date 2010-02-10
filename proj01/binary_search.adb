@@ -1,8 +1,9 @@
 -- Not my code!
--- 
--- Copied verbatim from:
+--
+-- Copied from:
 -- http://en.wikibooks.org/wiki/Algorithm_Implementation/Search/Binary_search
-
+--
+-- Modified slightly for my own tastes.
 procedure Binary_Search
   (Elements : in     Array_Type;
    Search   : in     Element_Type;

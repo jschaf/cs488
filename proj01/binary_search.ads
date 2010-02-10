@@ -1,5 +1,5 @@
 -- Not my code!
--- 
+--
 -- Copied verbatim from:
 -- http://en.wikibooks.org/wiki/Algorithm_Implementation/Search/Binary_search
 
