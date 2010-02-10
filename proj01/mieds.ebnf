@@ -1,0 +1,46 @@
+
+<model> = { <description-section> <instance-section> } EOF
+<description-section> = "description" { <named-description> }
+<named-description-head> =  ID  [ ( <parameter-list> ) ] <named-description-tail>
+<named-description-tail> = "=" <description> ";" | ":" <type-id> ";"
+<parameter-list> = <parameter> {, <parameter> }
+<parameter> = ID ":" <type-id>
+<type-id> = "number" | "point" | "segment" | "route" | "friend" | "schedule"
+        | "sensor"
+<description> = <point-or-description-head> | <segment-description>
+                | <route-description> | <friend-description> |
+                | <trip-description>  | <threat-description>  |
+                | <schedule-description> | <sensor-description>
+<point-or-description-head> = "(" <expr> <point-or-description-tail>
+<point-or-description-tail> = "," <expr> ")" | ")"
+<segment-description> = "segment" ID -> ID [ <with-attributes> ]
+<route-description> = "route" ( <segment-list> )
+<segment-list> = <segment-id> {, <segment-id> }
+<segment-id> = ID | "~" ID
+<friend-description> = "friend" <expr> [ <with-attributes> ]
+<trip-description> = "trip" ID "->" ID [ <with-attributes> ]
+<threat-description> = "threat" ( <id-list>  ) [ <with-attributes> ]
+<schedule-description> = "schedule"  [ <with-attributes> ]
+<sensor-description> = "sensor" <expr> ->
+                            ( <id-list>  ) [ <with-attributes> ]
+<with-attributes> = "with" <attribute-list>
+<attribute-list> = <attribute-pair> {, <attribute-pair> }
+<attribute-pair> = <expr-attribute-name> = <expr>
+<id-list> = ID { "," ID }
+<instance-section> = "instance" { <instance> }
+<instance> = ID ":" ID  [ ( <expr-list>  ) ] ;
+<expr-list> = <expr> { , <expr> }
+<expr-attribute-name> = "trafficability" | "vulnerability" | "range"
+                   | "effectiveness" | "schedule" | "start" | "interval"
+<expr> = <term> { <addop> <term> }
+<term> = <signed-factor> { <mulop> <signed-factor> }
+<signed-factor> = - <factor> | <factor>
+<factor> = "(" <expr> ")"
+           | <random-var>
+           | ID [ "(" <expr-list>  ")" ]
+           | NUMBER
+<random-var> = uniform ( <expr> , <expr> )
+               | normal ( <expr> , <expr> )
+               | exponential ( <expr> )
+<addop> = "+" | "-"
+<mulop> = "*" | "/"
