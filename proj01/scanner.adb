@@ -362,11 +362,6 @@ package body Scanner is
          State := New_State;
 
       end loop Scanner_Loop;
-
-      -- Default values
-      Start_Index := 1;
-      Token        := Illegal_Token;
-
    end Scan_Next_Token;
 
    -- Eliminate the leading space that Ada puts in front of positive
