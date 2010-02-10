@@ -5,10 +5,30 @@
 -RNon_Qualified_Aggregates
 -ROTHERS_In_Aggregates
 
+-- Slices aren't that evil
+-RSlices
+
+-- It's useful to return arbitrary length strings
+-RUnconstrained_Array_Returns
+
+-- Multiple function returns are not that confusing
+-RImproper_Returns
+
+-- We're not dealing with safety critical software
+-RNon_SPARK_Attributes
+
+-- I don't want to declare a bunch of subtypes
+-RAnonymous_Subtypes
+
+-- I don't understand the danger here.  Convention over configuration, right?
+-RDefault_Parameters
+
+-- Using positional notation is too verbose for jump tables.
+-RPositional_Components
+
 -- Style checks
 +RStyle_Checks:3     -- Specify indentation level
 +RStyle_Checks:a     -- Check attribute casing
-+RStyle_Checks:A     -- Use of array index numbers in array attributes
 +RStyle_Checks:b     -- Blanks not allowed at statement end
 -- +RStyle_Checks:c     -- Check comments
 +RStyle_Checks:e     -- Check end/exit labels
@@ -21,7 +41,7 @@
 +RStyle_Checks:n     -- Check casing of entities in Standard
 +RStyle_Checks:p     -- Check pragma casing
 +RStyle_Checks:r     -- Check references
-+RStyle_Checks:s     -- Check separate specs
+-- +RStyle_Checks:s     -- Check separate specs
 
 -- I don't like Ada's quirky spacing fetish
 -- +RStyle_Checks:t     -- Check token spacing
