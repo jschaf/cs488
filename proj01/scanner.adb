@@ -15,8 +15,6 @@ with Binary_Search;
 
 package body Scanner is
 
-   package T_IO renames Ada.Text_IO;
-
    MAX_KEYWORD_LENGTH_C : constant Natural := 24;
 
    package SB is new Ada.Strings.Bounded.Generic_Bounded_Length
@@ -62,7 +60,7 @@ package body Scanner is
    -- package doesn't take an equal function.  Thus, we can't provide
    -- a custom equality test to check specific fields.
    type Token_Array_T is array (Positive range <>) of Token_T;
-   TOKENS_C : constant Token_Array_T :=
+   TOKENS_C : constant Token_Array_T := Token_Array_T'
      (Keyword_Description,
       Keyword_Effectiveness,
       Keyword_Exponential,
@@ -364,17 +362,18 @@ package body Scanner is
          State := New_State;
 
       end loop Scanner_Loop;
+
+      -- Default values
+      Start_Index := 1;
+      Token        := Illegal_Token;
+
    end Scan_Next_Token;
 
    -- Eliminate the leading space that Ada puts in front of positive
    -- integer images.
    function Image(N : in Integer) return String is
-      S : String := Integer'Image(N);
    begin
-      if S(1) = ' ' then
-         return S(2 .. S'Last);
-      end if;
-      return S;
+      return Trim(Source => Integer'Image(N), Side => Ada.Strings.Left);
    end Image;
 
    -- Print scanner return as a human-readable string.
@@ -387,9 +386,9 @@ package body Scanner is
       Indent      : in Natural := 0)
    is
    begin
-      T_IO.Put(Indent * ' ' & "[" & Image(Line_Number) & "|" &
-                 S(Start_Index .. End_Index) & "|"
-                   & Token_T'Image(Token) & "]");
+      Put(Indent * ' ' & "[" & Image(Line_Number) & "|" &
+            S(Start_Index .. End_Index) & "|"
+            & Token_T'Image(Token) & "]");
    end Put_Scanned_Token;
 
    package String_Vector is new Ada.Containers.Vectors
@@ -399,9 +398,9 @@ package body Scanner is
    -- Rewritten to take advantage of Vectors.
    function Read_To_String (File_Name : in Buffer_T) return Buffer_A is
 
-      function Vec_To_Buffer_A 
-        (Vec : in String_Vector.Vector) 
-        return Buffer_A 
+      function Vec_To_Buffer_A
+        (Vec : in String_Vector.Vector)
+        return Buffer_A
       is
          Full_String : String(1 .. Positive(Vec.Length));
       begin
@@ -412,17 +411,14 @@ package body Scanner is
       end Vec_To_Buffer_A;
 
       Infile : File_Type;
-      -- To avoid many vector resizes
-      VECTOR_INITIAL_SIZE_C : constant := 1000;
-      Char_Vector : String_Vector.Vector
-        := String_Vector.To_Vector(VECTOR_INITIAL_SIZE_C);
+      Char_Vector : String_Vector.Vector;
    begin
       Open(File => Infile, Mode => In_File, Name => File_Name);
       loop
          Char_Vector.Append(Character'Input(Stream(Infile)));
       end loop;
    exception
-   when T_IO.End_Error =>
+   when Ada.Text_IO.End_Error =>
       Close(Infile);
       return Vec_To_Buffer_A(Char_Vector);
    end Read_To_String;
