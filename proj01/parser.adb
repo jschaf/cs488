@@ -1,49 +1,50 @@
 -- Model IED Simulator
 -- COL Gene Ressler, 1 December 2007
 
---  1. <model> --> { <description-section> <instance-section> } EOF
---  2. <description-section> --> description { <named-description> }
---  3. <named-description> -->  ID  [ ( <parameter-list> ) ] = <description> ;
---  4. <parameter-list> --> <parameter> {, <parameter> }
---  5. <parameter> --> ID : <type-id>
---  6. <type-id> --> number | point | segment | route | friend | schedule
---             | sensor
---  7. <description> --> <expr> | <point-description> | <segment-description>
---                     | <route-description> | <friend-description> |
---                     | <trip-description>  | <threat-description>  |
---                     | <schedule-description> | <sensor-description>
---  8. <point-description> -->  ( <expr> , <expr> )
---  9. <segment-description> --> segment ID -> ID [ <with-attributes> ]
---  10. <route-description> --> route ( <segment-list> )
---  11. <segment-list> --> <segment-id> {, <segment-id> }
---  12. <segment-id> --> ID | ~ ID
---  13. <friend-description> --> friend <expr> [ <with-attributes> ]
---  14. <trip-description> --> trip ID -> ID [ <with-attributes> ]
---  15. <threat-description> --> threat ( <id-list>  ) [ <with-attributes> ]
---  16. <schedule-description> --> schedule  [ <with-attributes> ]
---  17. <sensor-description> --> sensor <expr> ->
---                                  ( <id-list>  ) [ <with-attributes> ]
---  18. <with-attributes> --> with <attribute-list>
---  19. <attribute-list> --> <attribute-pair> {, <attribute-pair> }
---  20. <attribute-pair> --> <expr-attribute-name> = <expr>
---  21. <id-list> --> ID { , ID }
---  22. <instance-section> --> instance { <instance> }
---  23. <instance> --> ID : ID  [ ( <expr-list>  ) ] ;
---  24. <expr-list> --> <expr> { , <expr> }
---  25. <expr-attribute-name> --> trafficability | vulnerability | range
---                         | effectiveness | schedule | start | interval
---  26. <expr> --> <term> { <addop> <term> }
---  27. <term> --> <signed-factor> { <mulop> <signed-factor> }
---  28. <signed-factor> --> - <factor> | <factor>
---  29. <factor> --> ( <expr> )
---                 | <random-var>
---                 | ID [ ( <expr-list>  ) ]
---                 | NUMBER
---  30. <random-var> --> uniform ( <expr> , <expr> )
---                     | normal ( <expr> , <expr> )
---                     | exponential ( <expr> )
---  31. <addop> --> + | -
---  32. <mulop> --> * | /
+-- <model> = { <description-section> <instance-section> } EOF
+-- <description-section> = "description" { <named-description> }
+-- <named-description-head> =  ID  [ ( <parameter-list> ) ] <named-description-tail>
+-- <named-description-tail> = "=" <description> ";" | ":" <type-id> ";"
+-- <parameter-list> = <parameter> {, <parameter> }
+-- <parameter> = ID ":" <type-id>
+-- <type-id> = "number" | "point" | "segment" | "route" | "friend" | "schedule"
+--         | "sensor"
+-- <description> = <expr> | <segment-description>
+--                 | <route-description> | <friend-description> |
+--                 | <trip-description>  | <threat-description>  |
+--                 | <schedule-description> | <sensor-description>
+-- <segment-description> = "segment" ID -> ID [ <with-attributes> ]
+-- <route-description> = "route" ( <segment-list> )
+-- <segment-list> = <segment-id> {, <segment-id> }
+-- <segment-id> = ID | "~" ID
+-- <friend-description> = "friend" <expr> [ <with-attributes> ]
+-- <trip-description> = "trip" ID "->" ID [ <with-attributes> ]
+-- <threat-description> = "threat" ( <id-list>  ) [ <with-attributes> ]
+-- <schedule-description> = "schedule"  [ <with-attributes> ]
+-- <sensor-description> = "sensor" <expr> ->
+--                             ( <id-list>  ) [ <with-attributes> ]
+-- <with-attributes> = "with" <attribute-list>
+-- <attribute-list> = <attribute-pair> {, <attribute-pair> }
+-- <attribute-pair> = <expr-attribute-name> = <expr>
+-- <id-list> = ID { "," ID }
+-- <instance-section> = "instance" { <instance> }
+-- <instance> = ID ":" ID  [ ( <expr-list>  ) ] ;
+-- <expr-list> = <expr> { , <expr> }
+-- <expr-attribute-name> = "trafficability" | "vulnerability" | "range"
+--                    | "effectiveness" | "schedule" | "start" | "interval"
+-- <expr> = <term> { <addop> <term> }
+-- <term> = <signed-factor> { <mulop> <signed-factor> }
+-- <signed-factor> = - <factor> | <factor>
+-- <factor> = "(" <expr> ")"
+--            | "(" <expr> "," <expr> ")"
+--            | <random-var>
+--            | ID [ "(" <expr-list>  ")" ]
+--            | NUMBER
+-- <random-var> = uniform ( <expr> , <expr> )
+--                | normal ( <expr> , <expr> )
+--                | exponential ( <expr> )
+-- <addop> = "+" | "-"
+-- <mulop> = "*" | "/"
 
 with Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
 use Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
