@@ -7,12 +7,10 @@
 <parameter> = ID ":" <type-id>
 <type-id> = "number" | "point" | "segment" | "route" | "friend" | "schedule"
         | "sensor"
-<description> = <point-or-description-head> | <segment-description>
+<description> = <expr> | <segment-description>
                 | <route-description> | <friend-description> |
                 | <trip-description>  | <threat-description>  |
                 | <schedule-description> | <sensor-description>
-<point-or-description-head> = "(" <expr> <point-or-description-tail>
-<point-or-description-tail> = "," <expr> ")" | ")"
 <segment-description> = "segment" ID -> ID [ <with-attributes> ]
 <route-description> = "route" ( <segment-list> )
 <segment-list> = <segment-id> {, <segment-id> }
@@ -36,6 +34,7 @@
 <term> = <signed-factor> { <mulop> <signed-factor> }
 <signed-factor> = - <factor> | <factor>
 <factor> = "(" <expr> ")"
+           | "(" <expr> "," <expr> ")"
            | <random-var>
            | ID [ "(" <expr-list>  ")" ]
            | NUMBER
