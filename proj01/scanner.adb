@@ -1,15 +1,14 @@
 -- Model IED Simulator
 -- COL Gene Ressler, 1 December 2007
 
-with Ada.Strings;
+with Ada.Characters.Latin_1;   use Ada.Characters.Latin_1;
+with Ada.Strings.Fixed;        use Ada.Strings.Fixed;
+with Ada.Text_IO;              use Ada.Text_IO;
+
 with Ada.Containers.Generic_Array_Sort;
 with Ada.Containers.Vectors;
 with Ada.Strings.Bounded;
-
-with Ada.Characters.Latin_1;   use Ada.Characters.Latin_1;
-with Ada.Strings.Fixed;        use Ada.Strings.Fixed;
-with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
-with Ada.Text_IO;              use Ada.Text_IO;
+with Ada.Text_IO.Text_Streams; 
 
 with Binary_Search;
 
@@ -405,13 +404,19 @@ package body Scanner is
          return new Buffer_T'(Full_String);
       end Vec_To_Buffer_A;
 
-      Infile : File_Type;
+      Infile      : File_Type;
+      Char_Stream : Text_Streams.Stream_Access;
+      Next_Char   : Character;
       Char_Vector : String_Vector.Vector;
    begin
       Open(File => Infile, Mode => In_File, Name => File_Name);
+      Char_Stream := Text_Streams.Stream(Infile);
+      
       loop
-         Char_Vector.Append(Character'Input(Stream(Infile)));
+         Next_Char := Character'Input(Char_Stream);
+         Char_Vector.Append(Next_Char);
       end loop;
+      
    exception
    when Ada.Text_IO.End_Error =>
       Close(Infile);
