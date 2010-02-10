@@ -54,14 +54,13 @@ package body Scanner is
       To_BS("uniform"),
       To_BS("vulnerability"),
       To_BS("with"));
-   
+
    -- BLUF: Using separate arrays is a quick, easy, but dirty hack.
-   
+
    -- If this does not match with KEYWORDS_C we're out of luck.
    -- TOKENS_C and KEYWORDS_C are decoupled because the Binary_Search
    -- package doesn't take an equal function.  Thus, we can't provide
-   -- a custom equality test to check specific fields (This could
-   -- probably be done with Finalization).
+   -- a custom equality test to check specific fields.
    type Token_Array_T is array (Positive range <>) of Token_T;
    TOKENS_C : constant Token_Array_T :=
      (Keyword_Description,
@@ -121,6 +120,7 @@ package body Scanner is
       Saw_Colon,
       Saw_Semi,
       Saw_End_Input,
+
       Begin_Error,
       Middle_Error,
       End_Error);
@@ -211,7 +211,7 @@ package body Scanner is
       Begin_Error =>
         (' ' | '$' | HT | CR | LF => End_Error,
          others                   => Middle_Error),
-      
+
       -- The only the difference between this and Begin_Error is that
       -- Middle_Error consumes input (i.e. advance).  We need two
       -- states so we don't consume whitespace when the illegal token
@@ -297,8 +297,8 @@ package body Scanner is
       begin
          Peek_Index := Peek_Index + 1;
       end Advance;
-      
-        
+
+
       State, New_State : State_T := Start;
 
       Return_Token : Token_T;
@@ -320,7 +320,7 @@ package body Scanner is
             exit Scanner_Loop;
          end if;
 
-         if State = Start and New_State /= Start then
+         if State = Start and then New_State /= Start then
             Start_Index := Peek_Index;
          end if;
 
@@ -336,7 +336,7 @@ package body Scanner is
 
          -- Beware of DeMorgan
          if (Return_Token /= Incomplete_Token
-               and Return_Token /= Illegal_Token) then
+               and then Return_Token /= Illegal_Token) then
             Token := Return_Token;
 
             -- Don't check strings that are longer than the max
@@ -391,79 +391,40 @@ package body Scanner is
                  S(Start_Index .. End_Index) & "|"
                    & Token_T'Image(Token) & "]");
    end Put_Scanned_Token;
-   
-   -- Free the buffer string returned by the procedure above.
-   procedure Free is new Ada.Unchecked_Deallocation 
-     (Buffer_T, Buffer_A);
 
-   
    package String_Vector is new Ada.Containers.Vectors
      (Index_Type   => Positive,
       Element_Type => Character);
-   
-   
-   
-   -- Slurp an entire file into a buffer.  Return a pointer to the
-   -- buffer string or null of the file could not be opened.  Lines
-   -- are separated with Ada.Characters.Latin_1.LF characters.
-   function Read_To_String (File_Name : in Buffer_T) return Buffer_A is
-      F : T_IO.File_Type;
-      Buf : Buffer_A;
-      Last_Index, Get_Index : Natural := 0;
 
-      procedure Extend_Buffer(New_Min_Size : in Natural) is
-         Tmp : Buffer_A;
-         New_Last : Natural := Buf'Last;
+   -- Rewritten to take advantage of Vectors.
+   function Read_To_String (File_Name : in Buffer_T) return Buffer_A is
+
+      function Vec_To_Buffer_A 
+        (Vec : in String_Vector.Vector) 
+        return Buffer_A 
+      is
+         Full_String : String(1 .. Positive(Vec.Length));
       begin
-         while New_Last < New_Min_Size loop
-           New_Last := 2 * New_Last;
+         for I in Full_String'Range loop
+            Full_String(I) := Vec.Element(I);
          end loop;
-         if New_Last > Buf'Last then
-           Tmp := new String(1 .. New_Last);
-           Tmp(Buf'Range) := Buf.all;
-           Free(Buf);
-           Buf := Tmp;
-         end if;
-      end Extend_Buffer;
-      
-      S : Buffer_A;
-      
+         return new Buffer_T'(Full_String);
+      end Vec_To_Buffer_A;
+
+      Infile : File_Type;
+      -- To avoid many vector resizes
+      VECTOR_INITIAL_SIZE_C : constant := 1000;
+      Char_Vector : String_Vector.Vector
+        := String_Vector.To_Vector(VECTOR_INITIAL_SIZE_C);
    begin
-      Check_File:
-      begin
-         T_IO.Open(F, T_IO.In_File, File_Name);
-      exception
-      when T_IO.Name_Error =>
-         raise T_IO.Name_Error with "file doesn't exist";
-      end Check_File;
-      
-      -- Allocate initial buffer.
-      Buf := new String(1 .. 2);
-      -- First get_line starts at position 1.
-      Get_Index := 1;
-      while not T_IO.End_Of_File(F) loop
-         loop
-            T_IO.Get_Line(F, Buf(Get_Index .. Buf'Last), Last_Index);
-            -- Exit when end of line or end of file. The end-of-file
-            -- should never happen in Unix because Unix files always
-            -- have an end-of-line as last character, but Windows does
-            -- not require it.
-            exit when Last_Index < Buf'Last or T_IO.End_Of_File(F);
-            -- Next get_line starts after the last char of this one.
-            Get_Index := Last_Index + 1;
-            -- Make the buffer bigger.
-            Extend_Buffer(Get_Index);
-         end loop;
-         -- Make room for line feed and at least one character.
-         Extend_Buffer(Last_Index + 2);
-         Last_Index := Last_Index + 1;
-         Buf(Last_Index) := LF;
-         Get_Index := Last_Index + 1;
+      Open(File => Infile, Mode => In_File, Name => File_Name);
+      loop
+         Char_Vector.Append(Character'Input(Stream(Infile)));
       end loop;
-      S := new String'(Buf(1 .. Last_Index));
-      Free(Buf);
-      T_IO.Close(F);
-      return S;
+   exception
+   when T_IO.End_Error =>
+      Close(Infile);
+      return Vec_To_Buffer_A(Char_Vector);
    end Read_To_String;
-   
+
 end Scanner;
