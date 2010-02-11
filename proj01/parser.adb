@@ -8,11 +8,11 @@
 -- <parameter-list> = <parameter> {, <parameter> }
 -- <parameter> = ID ":" <type-id>
 -- <type-id> = "number" | "point" | "segment" | "route" | "friend" | "schedule"
---         | "sensor"
+--        | "sensor"
 -- <description> = <expr> | <segment-description>
---                 | <route-description> | <friend-description> |
---                 | <trip-description>  | <threat-description>  |
---                 | <schedule-description> | <sensor-description>
+--                | <route-description> | <friend-description> |
+--                | <trip-description>  | <threat-description>  |
+--                | <schedule-description> | <sensor-description>
 -- <segment-description> = "segment" ID -> ID [ <with-attributes> ]
 -- <route-description> = "route" ( <segment-list> )
 -- <segment-list> = <segment-id> {, <segment-id> }
@@ -22,7 +22,7 @@
 -- <threat-description> = "threat" ( <id-list>  ) [ <with-attributes> ]
 -- <schedule-description> = "schedule"  [ <with-attributes> ]
 -- <sensor-description> = "sensor" <expr> ->
---                             ( <id-list>  ) [ <with-attributes> ]
+--                            ( <id-list>  ) [ <with-attributes> ]
 -- <with-attributes> = "with" <attribute-list>
 -- <attribute-list> = <attribute-pair> {, <attribute-pair> }
 -- <attribute-pair> = <expr-attribute-name> = <expr>
@@ -31,18 +31,18 @@
 -- <instance> = ID ":" ID  [ ( <expr-list>  ) ] ;
 -- <expr-list> = <expr> { , <expr> }
 -- <expr-attribute-name> = "trafficability" | "vulnerability" | "range"
---                    | "effectiveness" | "schedule" | "start" | "interval"
+--                   | "effectiveness" | "schedule" | "start" | "interval"
 -- <expr> = <term> { <addop> <term> }
 -- <term> = <signed-factor> { <mulop> <signed-factor> }
 -- <signed-factor> = - <factor> | <factor>
 -- <factor> = "(" <expr> ")"
---            | "(" <expr> "," <expr> ")"
---            | <random-var>
---            | ID [ "(" <expr-list>  ")" ]
---            | NUMBER
+--           | "(" <expr> "," <expr> ")"
+--           | <random-var>
+--           | ID [ "(" <expr-list>  ")" ]
+--           | NUMBER
 -- <random-var> = uniform ( <expr> , <expr> )
---                | normal ( <expr> , <expr> )
---                | exponential ( <expr> )
+--               | normal ( <expr> , <expr> )
+--               | exponential ( <expr> )
 -- <addop> = "+" | "-"
 -- <mulop> = "*" | "/"
 
@@ -61,10 +61,10 @@ package body Parser is
       Debug_Mode : in Boolean := False)
    is
 
-      -- A debugging print routine with indentation control.
-      -- If first character of Msg is '+', indentation is increased by one
-      -- level after printing the message.  If it's '-', indentation is
-      -- decreased by one level before printing.
+      -- A debugging print routine with indentation control.  If first
+      -- character of Msg is '+', indentation is increased by one
+      -- level after printing the message.  If it's '-', indentation
+      -- is decreased by one level before printing.
       Indentation : Natural := 0;
       procedure Debug (Msg : in String) is
       begin
@@ -97,22 +97,23 @@ package body Parser is
       Line_Number : Positive   := 1;
       Look_Ahead  : Token_T := End_Input; -- Enumerated type of token.
 
-      -- Return the current lookahead token string by slicing the input.
+      -- Return the current lookahead token string by slicing the
+      -- input.
       function Token_String return String is
       begin
          return S (Start_Index .. End_Index);
       end Token_String;
 
-      -- Scan the next token into the lookahead and print a description if
-      -- in debug mode.
+      -- Scan the next token into the lookahead and print a
+      -- description if in debug mode.
       procedure Advance is
       begin
          Scan_Next_Token (S, Start_Index, End_Index, Line_Number, Look_Ahead);
          Debug_Token (Start_Index, End_Index, Line_Number, Look_Ahead);
       end Advance;
 
-      -- Make sure the next token in the lookahead matches one we specify.  If
-      -- not, signal a syntax error.
+      -- Make sure the next token in the lookahead matches one we
+      -- specify.  If not, signal a syntax error.
       procedure Match (Token : in Token_T) is
       begin
          if Look_Ahead = Token then
@@ -131,7 +132,6 @@ package body Parser is
       procedure Parameter;
       procedure Type_ID;
       procedure Description;
-      procedure Point_Description;
       procedure Segment_Description;
       procedure Route_Description;
       procedure Segment_List;
@@ -157,274 +157,729 @@ package body Parser is
       procedure Add_Op;
       procedure Mul_Op;
 
-      --  1. <model> --> { <description-section> <instance-section> } EOF
+      -- 1. <model> --> { <description-section> <instance-section> } EOF
+      -- 
+      -- First Set: {Keyword_Description, End_Input}
       procedure Model is
       begin
          Debug ("+Model");
-         -- to be completed!
+         case Look_Ahead is
+            when Keyword_Description =>
+               null;
+            when End_Input =>
+               null;
+            when others =>
+               null;
+         end case;
          Debug ("-Model");
       end Model;
 
-      --  2. <description-section> --> description <named-description>
-      --                                  { <named-description> }
+      -- <description-section> --> description <named-description>
+      --                              { <named-description> }
+      --                              
+      -- First Set: {Keyword_Description}
       procedure Description_Section is
       begin
          Debug ("+Description_Section");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Description =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Description_Section");
       end Description_Section;
 
-      --  3. <named-description-head> --> ID [(<parameter-list>)] <named-description-tail>
+      -- 3. <named-description-head> --> ID [(<parameter-list>)] <named-description-tail>
+      -- 
+      -- First Set: {ID}
       procedure Named_Description_Head is
       begin
          Debug ("+Named_Description_Head");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Named_Description_Head");
       end Named_Description_Head;
       
-      --  3. <named-description> --> = <description> ; | : <description> ;
+      -- 3. <named-description> --> = <description> ; | : <description> ;
+      -- 
+      -- First Set: {Equals, Colon}
       procedure Named_Description_Tail is
       begin
          Debug ("+Named_Description_Tail");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Equals =>
+              null;
+            when Colon =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Named_Description_Tail");
       end Named_Description_Tail;
 
       
-      --  4. <parameter-list> --> <parameter> {, <parameter> }
+      -- 4. <parameter-list> --> <parameter> {, <parameter> }
+      -- 
+      -- First Set: {ID}
       procedure Parameter_List is
       begin
          Debug ("+Parameter_List");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Parameter_List");
       end Parameter_List;
 
-      --  5. <parameter> --> ID : <type-id>
+      -- 5. <parameter> --> ID : <type-id>
+      -- 
+      -- First Set: {ID}
       procedure Parameter is
       begin
          Debug ("+Parameter");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Parameter");
       end Parameter;
 
-      --  6. <type-id> --> number | point | segment | route | friend | schedule
-      --             | sensor
+      -- 6. <type-id> --> number | point | segment | route | friend | schedule
+      --            | sensor
+      --            
+      -- First Set: {Keyword_Number, Keyword_Point, Keyword_Segment,
+      -- Keyword_Route, Keyword_Friend, Keyword_Schedule,
+      -- Keyword_Sensor}
       procedure Type_ID is
       begin
          Debug ("+Type_Id");
-         -- to be completed!
-         Debug ("-Type_Id");
+         
+         
+         case Look_Ahead is
+            when Keyword_Number =>
+              null;
+            when Keyword_Point =>
+              null;
+            when Keyword_Segment =>
+               null;
+            when Keyword_Route =>
+               null;
+            when Keyword_Friend =>
+               null;
+            when Keyword_Schedule =>
+               null;
+            when Keyword_Sensor =>
+               null;
+            when others =>
+               null;
+         end case;
+           
       end Type_ID;
 
-      --  7. <description> --> <expr>
-      --                     | <segment-description> | <point-description>
-      --                     | <route-description> | <friend-description> |
-      --                     | <trip-description>  | <threat-description>  |
-      --                     | <schedule-description> | <sensor-description>
+      -- 7. <description> --> <expr>
+      --                    | <segment-description> | <point-description>
+      --                    | <route-description> | <friend-description> |
+      --                    | <trip-description>  | <threat-description>  |
+      --                    | <schedule-description> | <sensor-description>
+      --                    
+      -- First Set: {Number, Left_Paren, Keyword_Segment,
+      -- Keyword_Route, Keyword_Friend, Keyword_Schedule,
+      -- Keyword_Sensor}
       procedure Description is
       begin
          Debug ("+Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Number =>
+              null;
+            when Left_Paren =>
+               null;
+            when Keyword_Segment =>
+               null;
+            when Keyword_Route =>
+               null;
+            when Keyword_Friend =>
+               null;
+            when Keyword_Schedule =>
+               null;
+            when Keyword_Sensor =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Description");
       end Description;
 
-      --  8. <point-description> -->  ( <expr> , <expr> )
-      procedure Point_Description is
-      begin
-         Debug ("+Point_Description");
-         -- to be completed!
-         Debug ("-Point_Description");
-      end Point_Description;
-
-      --  9. <segment-description> --> segment ID -> ID [ <with-attributes> ]
+      -- 9. <segment-description> --> segment ID -> ID [ <with-attributes> ]
+      -- 
+      -- First Set: {Keyword_Segment}
       procedure Segment_Description is
       begin
          Debug ("+Segment_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Segment =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Segment_Description");
       end Segment_Description;
 
-      --  10. <route-description> --> route ( <segment-list> )
+      -- 10. <route-description> --> route ( <segment-list> )
+      -- 
+      -- First Set: {Keyword_Route}
       procedure Route_Description is
       begin
          Debug ("+Route_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Route =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Route_Description");
       end Route_Description;
 
-      --  11. <segment-list> --> <segment-id> {, <segment-id> }
+      -- 11. <segment-list> --> <segment-id> {, <segment-id> }
+      -- 
+      -- First Set: {ID, Tilde}
       procedure Segment_List is
       begin
          Debug ("+Segment_List");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when Tilde =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Segment_List");
       end Segment_List;
 
-      --  12. <segment-id> --> ID | ~ ID
+      -- 12. <segment-id> --> ID | ~ ID
+      -- 
+      -- First Set: {ID, Tilde}
       procedure Segment_ID is
       begin
          Debug ("+Segment_Id");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when Tilde =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Segment_Id");
       end Segment_ID;
 
-      --  13. <friend-description> --> friend <expr> [ <with-attributes> ]
+      -- 13. <friend-description> --> friend <expr> [ <with-attributes> ]
+      -- 
+      -- First Set: {Keyword_Friend}
       procedure Friend_Description is
       begin
          Debug ("+Friend_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Friend =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Friend_Description");
       end Friend_Description;
 
-      --  14. <trip-description> --> trip ID -> ID [ <with-attributes> ]
+      -- 14. <trip-description> --> trip ID -> ID [ <with-attributes> ]
+      -- 
+      -- First Set: {Keyword_Trip}
       procedure Trip_Description is
       begin
          Debug ("+Trip_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Trip =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Trip_Description");
       end Trip_Description;
 
-      --  15. <threat-description> --> threat (<id-list>) [<with-attributes>]
+      -- 15. <threat-description> --> threat (<id-list>) [<with-attributes>]
+      -- 
+      -- First Set: {Keyword_Threat}
       procedure Threat_Description is
       begin
          Debug ("+Threat_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Threat =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Threat_Description");
       end Threat_Description;
 
-      --  16. <schedule-description> --> schedule  [ <with-attributes> ]
+      -- 16. <schedule-description> --> schedule  [ <with-attributes> ]
+      -- 
+      -- First Set: {Keyword_Schedule}
       procedure Schedule_Description is
       begin
          Debug ("+Schedule_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Schedule =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Schedule_Description");
       end Schedule_Description;
 
-      --  17. <sensor-description> --> sensor <expr> ->
-      --                                  ( <id-list>  ) [ <with-attributes> ]
+      -- 17. <sensor-description> --> sensor <expr> ->
+      --                                 ( <id-list>  ) [ <with-attributes> ]
+      --                                 
+      -- First Set: {Keyword_Sensor}
       procedure Sensor_Description is
       begin
          Debug ("+Sensor_Description");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Sensor =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Sensor_Description");
       end Sensor_Description;
 
-      --  18. <with-attributes> --> with <attribute-list>
+      -- 18. <with-attributes> --> with <attribute-list>
+      -- 
+      -- First Set: {Keyword_With}
       procedure With_Attributes is
       begin
          Debug ("+With_Attributes");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_With =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-With_Attributes");
       end With_Attributes;
 
-      --  19. <attribute-list> --> <attribute-pair> {, <attribute-pair> }
+      -- 19. <attribute-list> --> <attribute-pair> {, <attribute-pair> }
+      -- 
+      -- First Set: {Keyword_Trafficability, Keyword_Vulnerability,
+      -- Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
+      -- Keyword_Start, Keyword_Interval}
       procedure Attribute_List is
       begin
          Debug ("+Attribute_List");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Trafficability =>
+              null;
+            when Keyword_Vulnerability =>
+              null;
+            when Keyword_Range =>
+               null;
+            when Keyword_Effectiveness =>
+               null;
+            when Keyword_Schedule =>
+               null;
+            when Keyword_Start =>
+               null;
+            when Keyword_Interval =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Attribute_List");
       end Attribute_List;
 
-      --  20. <attribute-pair> --> <expr-attribute-name> = <expr>
+      -- 20. <attribute-pair> --> <expr-attribute-name> = <expr>
+      -- 
+      -- First Set: {Keyword_Trafficability, Keyword_Vulnerability,
+      -- Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
+      -- Keyword_Start, Keyword_Interval}
       procedure Attribute_Pair is
       begin
          Debug ("+Attribute_Pair");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Trafficability =>
+              null;
+            when Keyword_Vulnerability =>
+              null;
+            when Keyword_Range =>
+               null;
+            when Keyword_Effectiveness =>
+               null;
+            when Keyword_Schedule =>
+               null;
+            when Keyword_Start =>
+               null;
+            when Keyword_Interval =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Attribute_Pair");
       end Attribute_Pair;
       
+      -- 21. <id-list> = ID { "," ID }
+      -- 
+      -- First Set: {ID}
       procedure ID_List is
       begin
          Debug ("+ID_List");
-         -- to be completed
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-ID_List");
       end ID_List;
       
-      --  22. <instance-section> --> instance <instance> { <instance> }
+      -- 22. <instance-section> --> instance <instance> { <instance> }
+      -- 
+      -- First Set: {Keyword_Instance}
       procedure Instance_Section is
       begin
          Debug ("+Instance_Section");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Instance =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Instance_Section");
       end Instance_Section;
 
-      --  23. <instance> --> ID : ID  [ ( <expr-list>  ) ] ;
+      -- 23. <instance> --> ID : ID  [ ( <expr-list>  ) ] ;
+      -- 
+      -- First Set: {ID}
       procedure Instance is
       begin
          Debug ("+Instance");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when ID =>
+              null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Instance");
       end Instance;
       
+      -- First Set: {Minus, Left_Paren, ID, Number, Keyword_Uniform,
+      -- Keyword_Exponential, Keyword_Normal}
       procedure Expr_List is
       begin
          Debug ("+Expr_List");
-         -- to be completed
+         
+         
+         case Look_Ahead is
+            when Minus =>
+              null;
+            when Left_Paren =>
+               null;
+            when ID =>
+               null;
+            when Number =>
+               null;
+            when Keyword_Uniform =>
+               null;
+            when Keyword_Exponential =>
+               null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
+           
          Debug ("-Expr_List");
       end Expr_List;
         
-      --  25. <expr-attribute-name> --> trafficability | vulnerability | range
-      --                         | effectiveness | schedule | start | interval
+      -- 25. <expr-attribute-name> --> trafficability | vulnerability | range
+      --                        | effectiveness | schedule | start | interval
+      --                        
+      -- First Set: {Keyword_Trafficability, Keyword_Vulnerability,
+      -- Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
+      -- Keyword_Start, Keyword_Interval}
       procedure Expr_Attribute_Name is
       begin
          Debug ("+Expr_Attribute_Name");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Keyword_Trafficability =>
+              null;
+            when Keyword_Vulnerability =>
+              null;
+            when Keyword_Range =>
+               null;
+            when Keyword_Effectiveness =>
+               null;
+            when Keyword_Schedule =>
+               null;
+            when Keyword_Start =>
+               null;
+            when Keyword_Interval =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Expr_Attribute_Name");
       end Expr_Attribute_Name;
 
-      --  26. <expr> --> <term> { <addop> <term> }
+      -- 26. <expr> --> <term> { <addop> <term> }
+      -- 
+      -- First Set: {Minus, Left_Paren, ID, Number, Keyword_Uniform,
+      -- Keyword_Exponential, Keyword_Normal}
       procedure Expr is
       begin
          Debug ("+Expr");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Minus =>
+              null;
+            when Left_Paren =>
+               null;
+            when ID =>
+               null;
+            when Number =>
+               null;
+            when Keyword_Uniform =>
+               null;
+            when Keyword_Exponential =>
+               null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Expr");
       end Expr;
 
-      --  27. <term> --> <signed-factor> { <mulop> <signed-factor> }
+      -- 27. <term> --> <signed-factor> { <mulop> <signed-factor> }
+      -- 
+      -- First Set: {Minus, Left_Paren, ID, Number, Keyword_Uniform,
+      -- Keyword_Exponential, Keyword_Normal}
       procedure Term is
       begin
          Debug ("+Term");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Minus =>
+              null;
+            when Left_Paren =>
+               null;
+            when ID =>
+               null;
+            when Number =>
+               null;
+            when Keyword_Uniform =>
+               null;
+            when Keyword_Exponential =>
+               null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Term");
       end Term;
 
-      --  28. <signed-factor> --> - <factor> | <factor>
+      -- 28. <signed-factor> --> - <factor> | <factor>
+      -- 
+      -- First Set: {Minus, Left_Paren, ID, Number, Keyword_Uniform,
+      -- Keyword_Exponential, Keyword_Normal}
       procedure Signed_Factor is
       begin
          Debug ("+Signed_Factor");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Minus =>
+              null;
+            when Left_Paren =>
+               null;
+            when ID =>
+               null;
+            when Number =>
+               null;
+            when Keyword_Uniform =>
+               null;
+            when Keyword_Exponential =>
+               null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Signed_Factor");
       end Signed_Factor;
 
-      --  29. <factor> --> ( <expr> )
-      --                 | <random-var>
-      --                 | ID [ ( <expr-list>  ) ]
-      --                 | NUMBER
+      -- 29. <factor> --> ( <expr> [, <expr>] )
+      --                | <random-var>
+      --                | ID [ ( <expr-list>  ) ]
+      --                | NUMBER
+      --                
+      -- First Set: {Left_Paren, ID, Number, Keyword_Uniform,
+      -- Keyword_Exponential, Keyword_Normal}
       procedure Factor is
       begin
          Debug ("+Factor");
-         -- to be completed!
+         
+         
+         case Look_Ahead is
+            when Left_Paren =>
+              null;
+            when ID =>
+              null;
+            when Number =>
+               null;
+            when Keyword_Uniform =>
+               null;
+            when Keyword_Exponential =>
+               null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Factor");
       end Factor;
       
+      -- First Set: {Keyword_Uniform, Keyword_Exponential, Keyword_Normal}
       procedure Random_Var is
       begin
          Debug ("+Random_Var");
-         -- to be completed
+         
+         
+         case Look_Ahead is
+            when Keyword_Uniform =>
+              null;
+            when Keyword_Exponential =>
+              null;
+            when Keyword_Normal =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Random_Var");
       end Random_Var;
       
+      -- First Set: {Plus, Minus}
       procedure Add_Op is
       begin
          Debug ("+Add_Op");
-         -- to be completed
+         
+         
+         case Look_Ahead is
+            when Plus =>
+              null;
+            when Minus =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Add_Op");
       end Add_Op;
       
+      -- First Set: {Star, Slash}
       procedure Mul_Op is
       begin
          Debug ("+Mul_Op");
-         -- to be completed
+         
+         
+         case Look_Ahead is
+            when Star =>
+              null;
+            when Slash =>
+               null;
+            when others =>
+               null;
+         end case;
+           
          Debug ("-Mul_Op");
       end Mul_Op;
       
