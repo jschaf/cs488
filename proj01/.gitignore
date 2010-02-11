@@ -3,3 +3,5 @@ html/
 *.pdf
 *.o
 *.ali
+gnatcheck.out
+*.txt
