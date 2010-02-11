@@ -33,8 +33,7 @@
 <expr> = <term> { <addop> <term> }
 <term> = <signed-factor> { <mulop> <signed-factor> }
 <signed-factor> = - <factor> | <factor>
-<factor> = "(" <expr> ")"
-           | "(" <expr> "," <expr> ")"
+<factor> = "(" <expr> ["," <expr>] ")"
            | <random-var>
            | ID [ "(" <expr-list>  ")" ]
            | NUMBER
