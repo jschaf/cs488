@@ -351,7 +351,7 @@ package body Parser is
                raise Syntax_Error with "Unexpected token " 
                  & Token_T'Image(Look_Ahead) & " in Type_ID";
          end case;
-           
+         Debug ("-Type_Id");
       end Type_ID;
 
       -- 7. <description> --> <expr>
