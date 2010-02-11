@@ -16,5 +16,4 @@ package Parser is
                     Debug_Mode : in Boolean := False);
 
    Syntax_Error : exception;
-
 end Parser;

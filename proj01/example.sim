@@ -1,5 +1,5 @@
 -- Some bad tokens
-a__b123 . .abc @
+--a__b123 . .abc @
 
 -- Test for MIEDs modeling language and simulator.
 description
