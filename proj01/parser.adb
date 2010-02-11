@@ -46,8 +46,10 @@
 -- <addop> = "+" | "-"
 -- <mulop> = "*" | "/"
 
-with Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
-use Ada.Text_IO, Ada.Characters.Handling, Ada.Strings.Fixed;
+with Ada.Exceptions;          use Ada.Exceptions;
+with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Characters.Handling; use Ada.Characters.Handling;
+with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
 
 with Ada.Containers.Doubly_Linked_Lists;
 
@@ -108,10 +110,12 @@ package body Parser is
       -- description if in debug mode.
       procedure Advance is
       begin
-         Scan_Next_Token (S, Start_Index, End_Index, Line_Number, Look_Ahead);
          Debug_Token (Start_Index, End_Index, Line_Number, Look_Ahead);
+         Scan_Next_Token (S, Start_Index, End_Index, Line_Number, Look_Ahead);
       end Advance;
-
+      
+      Unexpected_Token_Error : exception;
+      
       -- Make sure the next token in the lookahead matches one we
       -- specify.  If not, signal a syntax error.
       procedure Match (Token : in Token_T) is
@@ -119,7 +123,7 @@ package body Parser is
          if Look_Ahead = Token then
             Advance;
          else
-            raise Syntax_Error
+            raise Unexpected_Token_Error
               with "expected a " & To_Lower (Token_T'Image (Token));
          end if;
       end Match;
@@ -167,11 +171,16 @@ package body Parser is
             when Keyword_Description =>
                Description_Section;
             when End_Input =>
-               null;
+               Advance;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Model";
          end case;
          Debug ("-Model");
+      
+      exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) & " in Model";
       end Model;
 
       -- <description-section> --> description <named-description-head>
@@ -190,10 +199,16 @@ package body Parser is
                   Named_Description_Head;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Description_Section";
          end case;
            
          Debug ("-Description_Section");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Description_Section";
       end Description_Section;
 
       -- 3. <named-description-head> --> ID [(<parameter-list>)] <named-description-tail>
@@ -207,15 +222,22 @@ package body Parser is
             when ID =>
                Match(ID);
                if Look_Ahead = Left_Paren then
+                  Match(Left_Paren);
                   Parameter_List;
-               else
-                  Named_Description_Tail;
+                  Match(Right_Paren);
                end if;
+               Named_Description_Tail;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Named_Description_Head";
          end case;
            
          Debug ("-Named_Description_Head");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Named_Description_Head";
       end Named_Description_Head;
       
       -- 3. <named-description> --> = <description> ; | : <type-id> ;
@@ -235,10 +257,16 @@ package body Parser is
                Type_ID;
                Match(Semi);
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Named_Description_Tail";
          end case;
            
          Debug ("-Named_Description_Tail");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Named_Description_Tail";
       end Named_Description_Tail;
 
       
@@ -257,10 +285,16 @@ package body Parser is
                   Parameter;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Parameter_List";
          end case;
            
          Debug ("-Parameter_List");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Parameter_List";
       end Parameter_List;
 
       -- 5. <parameter> --> ID : <type-id>
@@ -276,10 +310,16 @@ package body Parser is
                Match(Colon);
                Type_ID;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Parameter";
          end case;
            
          Debug ("-Parameter");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Parameter";
       end Parameter;
 
       -- 6. <type-id> --> number | point | segment | route | friend | schedule
@@ -294,21 +334,22 @@ package body Parser is
          
          case Look_Ahead is
             when Keyword_Number =>
-               null;
+               Advance;
             when Keyword_Point =>
-               null;
+               Advance;
             when Keyword_Segment =>
-               null;
+               Advance;
             when Keyword_Route =>
-               null;
+               Advance;
             when Keyword_Friend =>
-               null;
+               Advance;
             when Keyword_Schedule =>
-               null;
+               Advance;
             when Keyword_Sensor =>
-               null;
+               Advance;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Type_ID";
          end case;
            
       end Type_ID;
@@ -321,7 +362,7 @@ package body Parser is
       --                    
       -- First Set: {Number, Left_Paren, Keyword_Segment,
       -- Keyword_Route, Keyword_Friend, Keyword_Schedule,
-      -- Keyword_Sensor}
+      -- Keyword_Sensor, Keyword_Threat, Keyword_Trip}
       procedure Description is
       begin
          Debug ("+Description");
@@ -339,11 +380,21 @@ package body Parser is
                Schedule_Description;
             when Keyword_Sensor =>
                Sensor_Description;
+            when Keyword_Trip =>
+               Trip_Description;
+            when Keyword_Threat =>
+               Threat_Description;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Description";
          end case;
            
          Debug ("-Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Type_ID";
       end Description;
 
       -- 9. <segment-description> --> segment ID -> ID [ <with-attributes> ]
@@ -363,10 +414,16 @@ package body Parser is
                   With_Attributes;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Segment_Description";
          end case;
            
          Debug ("-Segment_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Segment_Description";
       end Segment_Description;
 
       -- 10. <route-description> --> route ( <segment-list> )
@@ -383,10 +440,16 @@ package body Parser is
                Segment_List;
                Match(Right_Paren);
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Route_Description";
          end case;
            
          Debug ("-Route_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Route_Description";
       end Route_Description;
 
       -- 11. <segment-list> --> <segment-id> {, <segment-id> }
@@ -404,10 +467,16 @@ package body Parser is
                   Segment_ID;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Segment_List";
          end case;
            
          Debug ("-Segment_List");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Segment_List";
       end Segment_List;
 
       -- 12. <segment-id> --> ID | ~ ID
@@ -419,15 +488,21 @@ package body Parser is
          
          case Look_Ahead is
             when ID =>
-               null;
+               Advance;
             when Tilde =>
                Match(Tilde);
                Match(ID);
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Segment_ID";
          end case;
            
          Debug ("-Segment_Id");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Segment_ID";
       end Segment_ID;
 
       -- 13. <friend-description> --> friend <expr> [ <with-attributes> ]
@@ -445,10 +520,16 @@ package body Parser is
                   With_Attributes;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Friend_Description";
          end case;
            
          Debug ("-Friend_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Friend_Description";
       end Friend_Description;
 
       -- 14. <trip-description> --> trip ID -> ID [ <with-attributes> ]
@@ -468,10 +549,16 @@ package body Parser is
                   With_Attributes;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Trip_Description";
          end case;
            
          Debug ("-Trip_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Trip_Description";
       end Trip_Description;
 
       -- 15. <threat-description> --> threat (<id-list>) [<with-attributes>]
@@ -491,10 +578,16 @@ package body Parser is
                   With_Attributes;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Threat_Description";
          end case;
            
          Debug ("-Threat_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Threat_Description";
       end Threat_Description;
 
       -- 16. <schedule-description> --> schedule  [ <with-attributes> ]
@@ -512,10 +605,16 @@ package body Parser is
                end if;
 
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Schedule_Description";
          end case;
            
          Debug ("-Schedule_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Schedule_Description";
       end Schedule_Description;
 
       -- 17. <sensor-description> --> sensor <expr> ->
@@ -538,10 +637,16 @@ package body Parser is
                   With_Attributes;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Sensor_Description";
          end case;
            
          Debug ("-Sensor_Description");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Sensor_Description";
       end Sensor_Description;
 
       -- 18. <with-attributes> --> with <attribute-list>
@@ -556,10 +661,16 @@ package body Parser is
                Match(Keyword_With);
                Attribute_List;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in With_Attributes";
          end case;
            
          Debug ("-With_Attributes");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in With_Attributes";
       end With_Attributes;
 
       -- 19. <attribute-list> --> <attribute-pair> {, <attribute-pair> }
@@ -573,37 +684,53 @@ package body Parser is
          
          case Look_Ahead is
             when Keyword_Trafficability | Keyword_Vulnerability | Keyword_Range
-              | Keyword_Effectiveness | Keyword_Schedule | Keyword_Start
-              | Keyword_Interval =>
-               null;
+              | Keyword_Effectiveness | Keyword_Sensor |Keyword_Schedule
+              | Keyword_Start | Keyword_Interval =>
+               Attribute_Pair;
+               while Look_Ahead = Comma loop
+                  Match(Comma);
+                  Attribute_Pair;
+               end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Attribute_List";
          end case;
            
          Debug ("-Attribute_List");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Attribute_List";
       end Attribute_List;
 
       -- 20. <attribute-pair> --> <expr-attribute-name> = <expr>
       -- 
       -- First Set: {Keyword_Trafficability, Keyword_Vulnerability,
-      -- Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
-      -- Keyword_Start, Keyword_Interval}
+      -- Keyword_Range, Keyword_Effectiveness, Keyword_Sensor,
+      -- Keyword_Schedule, Keyword_Start, Keyword_Interval}
       procedure Attribute_Pair is
       begin
          Debug ("+Attribute_Pair");
          
          case Look_Ahead is
             when Keyword_Trafficability | Keyword_Vulnerability | Keyword_Range
-              | Keyword_Effectiveness | Keyword_Schedule | Keyword_Start
-              | Keyword_Interval =>
+              | Keyword_Effectiveness | Keyword_Sensor | Keyword_Schedule
+              | Keyword_Start | Keyword_Interval =>
                Expr_Attribute_Name;
                Match(Equals);
                Expr;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Attribute_Pair";
          end case;
            
          Debug ("-Attribute_Pair");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Attribute_Pair";
       end Attribute_Pair;
       
       -- 21. <id-list> = ID { "," ID }
@@ -621,10 +748,16 @@ package body Parser is
                   Match(ID);
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in ID_List";
          end case;
            
          Debug ("-ID_List");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in ID_List";
       end ID_List;
       
       -- 22. <instance-section> --> instance <instance> { <instance> }
@@ -642,10 +775,16 @@ package body Parser is
                   Instance;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Instance_Section";
          end case;
            
          Debug ("-Instance_Section");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Instance_Section";
       end Instance_Section;
 
       -- 23. <instance> --> ID : ID  [ ( <expr-list>  ) ] ;
@@ -667,10 +806,16 @@ package body Parser is
                end if;
                Match(Semi);
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Instance";
          end case;
            
          Debug ("-Instance");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Instance";
       end Instance;
       
       -- <expr-list> = <expr> { , <expr> }
@@ -690,43 +835,57 @@ package body Parser is
                   Expr_List;
                end if;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Expr_List";
          end case;
            
            
          Debug ("-Expr_List");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Expr_List";
       end Expr_List;
         
       -- 25. <expr-attribute-name> --> trafficability | vulnerability | range
       --                        | effectiveness | schedule | start | interval
       --                        
       -- First Set: {Keyword_Trafficability, Keyword_Vulnerability,
-      -- Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
-      -- Keyword_Start, Keyword_Interval}
+      --  Keyword_Range, Keyword_Effectiveness, Keyword_Schedule,
+      --  Keyword_Sensor, Keyword_Start, Keyword_Interval}
       procedure Expr_Attribute_Name is
       begin
          Debug ("+Expr_Attribute_Name");
          
          case Look_Ahead is
             when Keyword_Trafficability =>
-               null;
+               Advance;
             when Keyword_Vulnerability =>
-              null;
+              Advance;
             when Keyword_Range =>
-               null;
+               Advance;
             when Keyword_Effectiveness =>
-               null;
+               Advance;
+            when Keyword_Sensor =>
+               Advance;
             when Keyword_Schedule =>
-               null;
+               Advance;
             when Keyword_Start =>
-               null;
+               Advance;
             when Keyword_Interval =>
-               null;
+               Advance;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Expr_Attribute_Name";
          end case;
            
          Debug ("-Expr_Attribute_Name");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Expr_Attribute_Name";
       end Expr_Attribute_Name;
 
       -- 26. <expr> --> <term> { <addop> <term> }
@@ -746,10 +905,16 @@ package body Parser is
                   Term;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Expr";
          end case;
            
          Debug ("-Expr");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Expr";
       end Expr;
 
       -- 27. <term> --> <signed-factor> { <mulop> <signed-factor> }
@@ -769,10 +934,16 @@ package body Parser is
                   Signed_Factor;
                end loop;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Term";
          end case;
            
          Debug ("-Term");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Term";
       end Term;
 
       -- 28. <signed-factor> --> - <factor> | <factor>
@@ -791,10 +962,16 @@ package body Parser is
               Keyword_Exponential | Keyword_Normal =>
                Factor;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Signed_Factor";
          end case;
            
          Debug ("-Signed_Factor");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Signed_Factor";
       end Signed_Factor;
 
       -- 29. <factor> --> ( <expr> [, <expr>] )
@@ -825,14 +1002,20 @@ package body Parser is
                   Match(Right_Paren);
                end if;
             when Number =>
-               null;
+               Advance;
             when Keyword_Uniform | Keyword_Exponential | Keyword_Normal =>
                Random_Var;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Factor";
          end case;
            
          Debug ("-Factor");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Factor";
       end Factor;
       -- <random-var> = uniform ( <expr> , <expr> )
       --               | normal ( <expr> , <expr> )
@@ -864,10 +1047,16 @@ package body Parser is
                Expr;
                Match(Right_Paren);
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Random_Var";
          end case;
            
          Debug ("-Random_Var");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Random_Var";
       end Random_Var;
       
       -- First Set: {Plus, Minus}
@@ -877,14 +1066,20 @@ package body Parser is
          
          case Look_Ahead is
             when Plus =>
-               null;
+               Advance;
             when Minus =>
-               null;
+               Advance;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Add_Op";
          end case;
            
          Debug ("-Add_Op");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Add_Op";
       end Add_Op;
       
       -- First Set: {Star, Slash}
@@ -894,14 +1089,20 @@ package body Parser is
          
          case Look_Ahead is
             when Star =>
-               null;
+               Advance;
             when Slash =>
-               null;
+               Advance;
             when others =>
-               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
+               raise Syntax_Error with "Unexpected token " 
+                 & Token_T'Image(Look_Ahead) & " in Mul_Op";
          end case;
            
          Debug ("-Mul_Op");
+         
+         exception
+         when Err : Unexpected_Token_Error =>
+            raise Syntax_Error with Exception_Message(Err) 
+              & " in Mul_Op";
       end Mul_Op;
       
    -- Parse the input string as a TL command.  Raise a Syntax_Error exception
