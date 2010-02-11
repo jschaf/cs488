@@ -165,29 +165,32 @@ package body Parser is
          Debug ("+Model");
          case Look_Ahead is
             when Keyword_Description =>
-               null;
+               Description_Section;
             when End_Input =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
          Debug ("-Model");
       end Model;
 
-      -- <description-section> --> description <named-description>
-      --                              { <named-description> }
+      -- <description-section> --> description <named-description-head>
+      --                              { <named-description-head> }
       --                              
       -- First Set: {Keyword_Description}
       procedure Description_Section is
       begin
          Debug ("+Description_Section");
          
-         
          case Look_Ahead is
             when Keyword_Description =>
-              null;
+               Match(Keyword_Description);
+               Named_Description_Head;
+               while Look_Ahead = ID loop
+                  Named_Description_Head;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Description_Section");
@@ -200,32 +203,39 @@ package body Parser is
       begin
          Debug ("+Named_Description_Head");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               Match(ID);
+               if Look_Ahead = Left_Paren then
+                  Parameter_List;
+               else
+                  Named_Description_Tail;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Named_Description_Head");
       end Named_Description_Head;
       
-      -- 3. <named-description> --> = <description> ; | : <description> ;
+      -- 3. <named-description> --> = <description> ; | : <type-id> ;
       -- 
       -- First Set: {Equals, Colon}
       procedure Named_Description_Tail is
       begin
          Debug ("+Named_Description_Tail");
          
-         
          case Look_Ahead is
             when Equals =>
-              null;
+               Match(Equals);
+               Description;
+               Match(Semi);
             when Colon =>
-               null;
+               Match(Colon);
+               Type_ID;
+               Match(Semi);
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Named_Description_Tail");
@@ -239,12 +249,15 @@ package body Parser is
       begin
          Debug ("+Parameter_List");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               Parameter;
+               while Look_Ahead = ID loop
+                  Match(Comma);
+                  Parameter;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Parameter_List");
@@ -257,12 +270,13 @@ package body Parser is
       begin
          Debug ("+Parameter");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               Match(ID);
+               Match(Colon);
+               Type_ID;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Parameter");
@@ -278,12 +292,11 @@ package body Parser is
       begin
          Debug ("+Type_Id");
          
-         
          case Look_Ahead is
             when Keyword_Number =>
-              null;
+               null;
             when Keyword_Point =>
-              null;
+               null;
             when Keyword_Segment =>
                null;
             when Keyword_Route =>
@@ -295,13 +308,13 @@ package body Parser is
             when Keyword_Sensor =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
       end Type_ID;
 
       -- 7. <description> --> <expr>
-      --                    | <segment-description> | <point-description>
+      --                    | <segment-description>
       --                    | <route-description> | <friend-description> |
       --                    | <trip-description>  | <threat-description>  |
       --                    | <schedule-description> | <sensor-description>
@@ -313,24 +326,21 @@ package body Parser is
       begin
          Debug ("+Description");
          
-         
          case Look_Ahead is
-            when Number =>
-              null;
-            when Left_Paren =>
-               null;
+            when Number | Left_Paren =>
+               Expr;
             when Keyword_Segment =>
-               null;
+               Segment_Description;
             when Keyword_Route =>
-               null;
+               Route_Description;
             when Keyword_Friend =>
-               null;
+               Friend_Description;
             when Keyword_Schedule =>
-               null;
+               Schedule_Description;
             when Keyword_Sensor =>
-               null;
+               Sensor_Description;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Description");
@@ -343,12 +353,17 @@ package body Parser is
       begin
          Debug ("+Segment_Description");
          
-         
          case Look_Ahead is
             when Keyword_Segment =>
-              null;
+               Match(Keyword_Segment);
+               Match(ID);
+               Match(Arrow);
+               Match(ID);
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Segment_Description");
@@ -361,12 +376,14 @@ package body Parser is
       begin
          Debug ("+Route_Description");
          
-         
          case Look_Ahead is
             when Keyword_Route =>
-              null;
+               Match(Keyword_Route);
+               Match(Left_Paren);
+               Segment_List;
+               Match(Right_Paren);
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Route_Description");
@@ -379,14 +396,15 @@ package body Parser is
       begin
          Debug ("+Segment_List");
          
-         
          case Look_Ahead is
-            when ID =>
-              null;
-            when Tilde =>
-               null;
+            when ID | Tilde =>
+               Segment_ID;
+               while Look_Ahead = Comma loop
+                  Match(Comma);
+                  Segment_ID;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Segment_List");
@@ -399,14 +417,14 @@ package body Parser is
       begin
          Debug ("+Segment_Id");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               null;
             when Tilde =>
-               null;
+               Match(Tilde);
+               Match(ID);
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Segment_Id");
@@ -419,12 +437,15 @@ package body Parser is
       begin
          Debug ("+Friend_Description");
          
-         
          case Look_Ahead is
             when Keyword_Friend =>
-              null;
+               Match(Keyword_Friend);
+               Expr;
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Friend_Description");
@@ -437,12 +458,17 @@ package body Parser is
       begin
          Debug ("+Trip_Description");
          
-         
          case Look_Ahead is
             when Keyword_Trip =>
-              null;
+               Match(Keyword_Trip);
+               Match(ID);
+               Match(Arrow);
+               Match(ID);
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Trip_Description");
@@ -455,12 +481,17 @@ package body Parser is
       begin
          Debug ("+Threat_Description");
          
-         
          case Look_Ahead is
             when Keyword_Threat =>
-              null;
+               Match(Keyword_Threat);
+               Match(Left_Paren);
+               ID_List;
+               Match(Right_Paren);
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Threat_Description");
@@ -473,12 +504,15 @@ package body Parser is
       begin
          Debug ("+Schedule_Description");
          
-         
          case Look_Ahead is
             when Keyword_Schedule =>
-              null;
+               Match(Keyword_Schedule);
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
+
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Schedule_Description");
@@ -492,12 +526,19 @@ package body Parser is
       begin
          Debug ("+Sensor_Description");
          
-         
          case Look_Ahead is
             when Keyword_Sensor =>
-              null;
+               Match(Keyword_Sensor);
+               Expr;
+               Match(Arrow);
+               Match(Left_Paren);
+               ID_List;
+               Match(Right_Paren);
+               if Look_Ahead = Keyword_With then
+                  With_Attributes;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Sensor_Description");
@@ -510,12 +551,12 @@ package body Parser is
       begin
          Debug ("+With_Attributes");
          
-         
          case Look_Ahead is
             when Keyword_With =>
-              null;
+               Match(Keyword_With);
+               Attribute_List;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-With_Attributes");
@@ -530,24 +571,13 @@ package body Parser is
       begin
          Debug ("+Attribute_List");
          
-         
          case Look_Ahead is
-            when Keyword_Trafficability =>
-              null;
-            when Keyword_Vulnerability =>
-              null;
-            when Keyword_Range =>
-               null;
-            when Keyword_Effectiveness =>
-               null;
-            when Keyword_Schedule =>
-               null;
-            when Keyword_Start =>
-               null;
-            when Keyword_Interval =>
+            when Keyword_Trafficability | Keyword_Vulnerability | Keyword_Range
+              | Keyword_Effectiveness | Keyword_Schedule | Keyword_Start
+              | Keyword_Interval =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Attribute_List");
@@ -562,24 +592,15 @@ package body Parser is
       begin
          Debug ("+Attribute_Pair");
          
-         
          case Look_Ahead is
-            when Keyword_Trafficability =>
-              null;
-            when Keyword_Vulnerability =>
-              null;
-            when Keyword_Range =>
-               null;
-            when Keyword_Effectiveness =>
-               null;
-            when Keyword_Schedule =>
-               null;
-            when Keyword_Start =>
-               null;
-            when Keyword_Interval =>
-               null;
+            when Keyword_Trafficability | Keyword_Vulnerability | Keyword_Range
+              | Keyword_Effectiveness | Keyword_Schedule | Keyword_Start
+              | Keyword_Interval =>
+               Expr_Attribute_Name;
+               Match(Equals);
+               Expr;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Attribute_Pair");
@@ -592,12 +613,15 @@ package body Parser is
       begin
          Debug ("+ID_List");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               Match(ID);
+               while Look_Ahead = Comma loop
+                  Match(Comma);
+                  Match(ID);
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-ID_List");
@@ -610,12 +634,15 @@ package body Parser is
       begin
          Debug ("+Instance_Section");
          
-         
          case Look_Ahead is
             when Keyword_Instance =>
-              null;
+               Match(Keyword_Instance);
+               Instance;
+               while Look_Ahead = ID loop
+                  Instance;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Instance_Section");
@@ -628,41 +655,42 @@ package body Parser is
       begin
          Debug ("+Instance");
          
-         
          case Look_Ahead is
             when ID =>
-              null;
+               Match(ID);
+               Match(Colon);
+               Match(ID);
+               if Look_Ahead = Left_Paren then
+                  Match(Left_Paren);
+                  Expr_List;
+                  Match(Right_Paren);
+               end if;
+               Match(Semi);
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Instance");
       end Instance;
       
+      -- <expr-list> = <expr> { , <expr> }
+      -- 
       -- First Set: {Minus, Left_Paren, ID, Number, Keyword_Uniform,
       -- Keyword_Exponential, Keyword_Normal}
       procedure Expr_List is
       begin
          Debug ("+Expr_List");
          
-         
          case Look_Ahead is
-            when Minus =>
-              null;
-            when Left_Paren =>
-               null;
-            when ID =>
-               null;
-            when Number =>
-               null;
-            when Keyword_Uniform =>
-               null;
-            when Keyword_Exponential =>
-               null;
-            when Keyword_Normal =>
-               null;
+            when Minus | Left_Paren | ID | Number | Keyword_Uniform 
+              | Keyword_Exponential | Keyword_Normal =>
+               Expr;
+               if Look_Ahead = Comma then
+                  Match(Comma);
+                  Expr_List;
+               end if;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
            
@@ -679,10 +707,9 @@ package body Parser is
       begin
          Debug ("+Expr_Attribute_Name");
          
-         
          case Look_Ahead is
             when Keyword_Trafficability =>
-              null;
+               null;
             when Keyword_Vulnerability =>
               null;
             when Keyword_Range =>
@@ -696,7 +723,7 @@ package body Parser is
             when Keyword_Interval =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Expr_Attribute_Name");
@@ -710,24 +737,16 @@ package body Parser is
       begin
          Debug ("+Expr");
          
-         
          case Look_Ahead is
-            when Minus =>
-              null;
-            when Left_Paren =>
-               null;
-            when ID =>
-               null;
-            when Number =>
-               null;
-            when Keyword_Uniform =>
-               null;
-            when Keyword_Exponential =>
-               null;
-            when Keyword_Normal =>
-               null;
+            when Minus | Left_Paren | ID | Number | Keyword_Uniform | 
+              Keyword_Exponential | Keyword_Normal =>
+               Term;
+               while Look_Ahead = Plus or else Look_Ahead = Minus loop
+                  Add_Op;
+                  Term;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Expr");
@@ -741,24 +760,16 @@ package body Parser is
       begin
          Debug ("+Term");
          
-         
          case Look_Ahead is
-            when Minus =>
-              null;
-            when Left_Paren =>
-               null;
-            when ID =>
-               null;
-            when Number =>
-               null;
-            when Keyword_Uniform =>
-               null;
-            when Keyword_Exponential =>
-               null;
-            when Keyword_Normal =>
-               null;
+            when Minus | Left_Paren | ID | Number | Keyword_Uniform | 
+              Keyword_Exponential | Keyword_Normal =>
+               Signed_Factor;
+               while Look_Ahead = Star or else Look_Ahead = Slash loop
+                  Mul_Op;
+                  Signed_Factor;
+               end loop;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Term");
@@ -772,24 +783,15 @@ package body Parser is
       begin
          Debug ("+Signed_Factor");
          
-         
          case Look_Ahead is
             when Minus =>
-              null;
-            when Left_Paren =>
-               null;
-            when ID =>
-               null;
-            when Number =>
-               null;
-            when Keyword_Uniform =>
-               null;
-            when Keyword_Exponential =>
-               null;
-            when Keyword_Normal =>
-               null;
+               Match(Minus);
+               Factor;
+            when Left_Paren | ID | Number | Keyword_Uniform | 
+              Keyword_Exponential | Keyword_Normal =>
+               Factor;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Signed_Factor");
@@ -806,42 +808,63 @@ package body Parser is
       begin
          Debug ("+Factor");
          
-         
          case Look_Ahead is
             when Left_Paren =>
-              null;
+               Match(Left_Paren);
+               Expr;
+               if Look_Ahead = Comma then
+                  Match(Comma);
+                  Expr;
+               end if;
+               Match(Right_Paren);
             when ID =>
-              null;
+               Match(ID);
+               if Look_Ahead = Left_Paren then
+                  Match(Left_Paren);
+                  Expr_List;
+                  Match(Right_Paren);
+               end if;
             when Number =>
                null;
-            when Keyword_Uniform =>
-               null;
-            when Keyword_Exponential =>
-               null;
-            when Keyword_Normal =>
-               null;
+            when Keyword_Uniform | Keyword_Exponential | Keyword_Normal =>
+               Random_Var;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Factor");
       end Factor;
-      
+      -- <random-var> = uniform ( <expr> , <expr> )
+      --               | normal ( <expr> , <expr> )
+      --               | exponential ( <expr> )
+      --
       -- First Set: {Keyword_Uniform, Keyword_Exponential, Keyword_Normal}
       procedure Random_Var is
       begin
          Debug ("+Random_Var");
          
-         
          case Look_Ahead is
             when Keyword_Uniform =>
-              null;
+               Match(Keyword_Uniform);
+               Match(Left_Paren);
+               Expr;
+               Match(Comma);
+               Expr;
+               Match(Right_Paren);
             when Keyword_Exponential =>
-              null;
+               Match(Keyword_Exponential);
+               Match(Left_Paren);
+               Expr;
+               Match(Right_Paren);
             when Keyword_Normal =>
-               null;
+               Match(Keyword_Normal);
+               Match(Left_Paren);
+               Expr;
+               Match(Comma);
+               Expr;
+               Match(Right_Paren);
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Random_Var");
@@ -852,14 +875,13 @@ package body Parser is
       begin
          Debug ("+Add_Op");
          
-         
          case Look_Ahead is
             when Plus =>
-              null;
+               null;
             when Minus =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Add_Op");
@@ -870,14 +892,13 @@ package body Parser is
       begin
          Debug ("+Mul_Op");
          
-         
          case Look_Ahead is
             when Star =>
-              null;
+               null;
             when Slash =>
                null;
             when others =>
-               null;
+               raise Syntax_Error with "Unexpected token " & Token_T'Image(Look_Ahead);
          end case;
            
          Debug ("-Mul_Op");
