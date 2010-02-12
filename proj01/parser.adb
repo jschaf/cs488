@@ -57,7 +57,7 @@ with Ada.Containers.Doubly_Linked_Lists;
 with Scanner; use Scanner;
 
 package body Parser is
-
+   
    procedure Parse
      (S          : in String;
       Rtn_Tree   : out Node_A;
