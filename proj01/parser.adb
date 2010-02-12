@@ -58,6 +58,11 @@ with Scanner; use Scanner;
 
 package body Parser is
    
+   function Node_A_Equals (Left, Right : in Node_A) return Boolean is 
+   begin
+      return Left.all = Right.all;
+   end Node_A_Equals;
+   
    procedure Parse
      (S          : in String;
       Rtn_Tree   : out Node_A;
