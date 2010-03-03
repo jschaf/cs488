@@ -1,1 +1,6 @@
 doc/
+html/
+*.o
+*.ali
+*.htm
+*.html
