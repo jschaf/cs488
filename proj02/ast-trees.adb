@@ -26,11 +26,25 @@ package body AST.Trees is
       end if;
       Tree.Tag := Geopoint_Tag;
    end Type_Check;
-
+   
    procedure Type_Check(Tree : access Segment_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.A, Symbol_Table);
+      Type_Check(Tree.B, Symbol_Table);
+      Type_Check(Tree.Trafficability, Symbol_Table);
+      Type_Check(Tree.Vulnerability, Symbol_Table);
+      
+      if Tree.A.Tag /= Geopoint_Tag then
+         {statement}...
+      [elsif_part]...
+      [else_part]
+      end if;
+         
+         
+      
+
+
    end Type_Check;
 
    procedure Type_Check(Tree : access Route_Type;
