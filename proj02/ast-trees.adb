@@ -26,11 +26,34 @@ package body AST.Trees is
       end if;
       Tree.Tag := Geopoint_Tag;
    end Type_Check;
-
    procedure Type_Check(Tree : access Segment_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.A, Symbol_Table);
+      Type_Check(Tree.B, Symbol_Table);
+      Type_Check(Tree.Trafficability, Symbol_Table);
+      Type_Check(Tree.Vulnerability, Symbol_Table);
+      
+      if Tree.A.Tag /= Geopoint_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'A' of segment is not a geopoint";
+      end if;
+      
+      if Tree.B.Tag /= Geopoint_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'B' of segment is not a geopoint";
+      end if;
+      
+      if Tree.Trafficability.Tag /= Constant_Number_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Trafficability' of segment is not a constant number";
+      end if;
+      
+      if Tree.Vulnerability.Tag /= Constant_Number_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Vulnerability' of segment is not a constant number";
+      end if;
+                  
    end Type_Check;
 
    procedure Type_Check(Tree : access Route_Type;
@@ -53,7 +76,26 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Friend_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      if Tree.Speed.Tag /= Constant_Number_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Speed' of Friend is not a Constant Number";
+      end if;
+      
+      if Tree.Vulnerability.Tag /= Constant_Number_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Vulnerability' of Friend is not a Constant Number";
+      end if;
+      
+      if Tree.Effectiveness.Tag /= Constant_Number_Tag then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Effectiveness' of Friend is not a Constant Number";
+      end if;
+      
+      if Tree.Sensor.Tag /= Sensor_Ptr_Type then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with "'Sensor' of Friend is not a Sensor Ptr";
+      end if;
+ 
    end Type_Check;
 
    procedure Type_Check(Tree : access Sensor_Type;
@@ -152,7 +194,7 @@ package body AST.Trees is
       null;
    end Type_Check;
 
-   procedure Type_Check(Tree : access Id_Ref_Type;
+   procedure Type_Check(Tree : access ID_Ref_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
       null;
@@ -201,7 +243,7 @@ package body AST.Trees is
       C  := First(Defs);
       while C /= No_Element loop
          Def := Def_Ptr_Type(Element(C));
-         Insert(Symbol_Table, Def.Id, Def.Lambda);
+         Insert(Symbol_Table, Def.ID, Def.Lambda);
          C := Next(C);
       end loop;
       C  := First(Defs);
@@ -231,7 +273,7 @@ package body AST.Trees is
       C_Actual := First(Actuals);
       while C_Formal /= No_Element and C_Actual /= No_Element loop
          Insert(New_Symbol_Table,
-                Formal_Ptr_Type(Element(C_Formal)).Id,
+                Formal_Ptr_Type(Element(C_Formal)).ID,
                 Element(C_Actual));
          -- Copy the recorded tag of the formal to a constraint on the
          -- value bound to the formal.
@@ -270,7 +312,7 @@ package body AST.Trees is
       P : Geopoint_Ptr_Type;
    begin
       P := new Geopoint_Type;
-      P.Id := Tree.Id;
+      P.ID := Tree.ID;
       Expand(Tree.X, Symbol_Table, P.X);
       Expand(Tree.Y, Symbol_Table, P.Y);
       Expanded_Tree := Node_Ptr_Type(P);
@@ -482,7 +524,7 @@ package body AST.Trees is
 
    -- This one is special because it's where ids are expanded into
    -- the subtrees they represent, including actual parameters.
-   procedure Expand(Tree : access Id_Ref_Type;
+   procedure Expand(Tree : access ID_Ref_Type;
                     Symbol_Table : in Symbol_Table_Ptr_Type;
                     Expanded_Tree : out Node_Ptr_Type) is
       Value : Node_Ptr_Type;
@@ -491,7 +533,7 @@ package body AST.Trees is
       New_Symbol_Table : Symbol_Table_Ptr_Type;
    begin
       -- Look up the id in the symbol table and get its value.
-      Look_Up(Symbol_Table, Tree.Id, Value);
+      Look_Up(Symbol_Table, Tree.ID, Value);
 
       -- If the value is not a lambda, use it as-is.  No need to expand it.
       -- Currently (10 Jan 2008), this only happens if the id is a formal
@@ -536,7 +578,7 @@ package body AST.Trees is
       P : Instance_Ptr_Type;
    begin
       P := new Instance_Type;
-      P.Id := Tree.Id;
+      P.ID := Tree.ID;
       Expand(Tree.Description, Symbol_Table, P.Description);
       Expanded_Tree := Node_Ptr_Type(P);
    end Expand;
@@ -1024,7 +1066,7 @@ package body AST.Trees is
                  Break_Cycles : in Boolean) is
    begin
       Open(Tree, "lambda_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Put("formals", Tree.Formals);
       if not Break_Cycles then
          Put("description", Tree.Description);
@@ -1039,7 +1081,7 @@ package body AST.Trees is
    procedure Put(Tree : access Geopoint_Type) is
    begin
       Open(Tree, "geopoint_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Put("x", Tree.X);
       Put("y", Tree.Y);
       Close(Tree, "geopoint_type");
@@ -1186,22 +1228,22 @@ package body AST.Trees is
    procedure Put(Tree : access Formal_Type) is
    begin
       Open(Tree, "formal_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Close(Tree, "formal_type");
    end Put;
 
    procedure Put(Tree : access Def_Type) is
    begin
       Open(Tree, "def_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Put(Tree => Lambda_Ptr_Type(Tree.Lambda), Break_Cycles => False);
       Close(Tree, "def_type");
    end Put;
 
-   procedure Put(Tree : access Id_Ref_Type) is
+   procedure Put(Tree : access ID_Ref_Type) is
    begin
       Open(Tree, "id_ref_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Put("actuals", Tree.Actuals);
       Close(Tree, "id_ref_type");
    end Put;
@@ -1209,7 +1251,7 @@ package body AST.Trees is
    procedure Put(Tree : access Instance_Type) is
    begin
       Open(Tree, "instance_type");
-      Put("id", Tree.Id);
+      Put("id", Tree.ID);
       Put("def", Tree.Description);
       Close(Tree, "instance_type");
    end Put;
