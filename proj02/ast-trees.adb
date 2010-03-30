@@ -10,22 +10,59 @@ use  AST.Tables;
 package body AST.Trees is
 
    use Node_Lists;
+   
+   -- Type check a specific field of a tree.
+   procedure Sub_Type_Check (Tree : access Node_Type'Class;
+                             Actual : in Tag_Type;
+                             Expected : in Tag_Type; 
+                             Error_Msg : in String) is
+   begin
+      if Actual /= Expected then
+         Tree.Tag:= Error_Tag;
+         raise Type_Error with Error_Msg;
+      end if;
+   end Sub_Type_Check;
+   
+   type Iterate_Procedure is not null access procedure (C : in Cursor);
+   
+   -- Return a procedure pointer we can use for Vector.Iterate.
+   --  
+   -- For some reason I can't use Iterate_Procedure as the return
+   -- value directly.  Gnat complains that the "subprogram must not
+   -- be deeper than the access type".
+   function Element_Type_Check 
+     (Tree : access Node_Type'Class;
+      Symbol_Table : in Symbol_Table_Ptr_Type;
+      Expected : in Tag_Type;
+      Error_Msg : in String) 
+     return not null access procedure (C : in Cursor)
+   is
+      procedure Element_Check (C : in Cursor) is
+      begin
+         Type_Check(Element(C), Symbol_Table);
+         Sub_Type_Check(Tree, Element(C).Tag, Expected, Error_Msg);
+      end Element_Check;
+      
+   begin
+      return Element_Check'Access;
+   end Element_Type_Check;
+
 
    procedure Type_Check(Tree : access Geopoint_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
       Type_Check(Tree.X, Symbol_Table);
       Type_Check(Tree.Y, Symbol_Table);
-      if Tree.X.Tag /= Constant_Number_Tag then
-	 Tree.Tag := Error_Tag;
-	 raise Type_Error with "X coordinate of geopoint is not a constant number.";
-      end if;
-      if Tree.Y.Tag /= Constant_Number_Tag then
-	 Tree.Tag := Error_Tag;
-	 raise Type_Error with "Y coordinate of geopoint is not a constant number.";
-      end if;
+      
+      Sub_Type_Check(Tree, Tree.X.Tag, Constant_Number_Tag,
+                     "X coordinate of geopoint is not a constant number.");
+      
+      Sub_Type_Check(Tree, Tree.Y.Tag, Constant_Number_Tag,
+                     "Y coordinate of geopoint is not a constant number.");
+      
       Tree.Tag := Geopoint_Tag;
    end Type_Check;
+   
    procedure Type_Check(Tree : access Segment_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
@@ -34,74 +71,77 @@ package body AST.Trees is
       Type_Check(Tree.Trafficability, Symbol_Table);
       Type_Check(Tree.Vulnerability, Symbol_Table);
       
-      if Tree.A.Tag /= Geopoint_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'A' of segment is not a geopoint";
-      end if;
+      Sub_Type_Check(Tree, Tree.A.Tag, Geopoint_Tag,
+                     "'A' of segment is not a geopoint");
       
-      if Tree.B.Tag /= Geopoint_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'B' of segment is not a geopoint";
-      end if;
+      Sub_Type_Check(Tree, Tree.B.Tag, Geopoint_Tag,
+                     "'B' of segment is not a geopoint");
       
-      if Tree.Trafficability.Tag /= Constant_Number_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Trafficability' of segment is not a constant number";
-      end if;
+      Sub_Type_Check(Tree, Tree.Trafficability.Tag, Constant_Number_Tag,
+                     "'Trafficability' of segment is not a constant number");
       
-      if Tree.Vulnerability.Tag /= Constant_Number_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Vulnerability' of segment is not a constant number";
-      end if;
-                  
+      Sub_Type_Check(Tree, Tree.Vulnerability.Tag, Constant_Number_Tag,
+                     "'Vulnerability' of segment is not a constant number");
+      
+      Tree.Tag := Segment_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Route_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
-      C : Cursor;
+      
+      Check_Segments : Iterate_Procedure := 
+        Element_Type_Check(Tree, Symbol_Table, Segment_Tag,
+                           "Route has bad segment");
+        
    begin
-      -- Type check all the segments recursively.
-      C := First(Tree.Segments);
-      while C /= No_Element loop
-	 Type_Check(Element(C), Symbol_Table);
-	 if Element(C).Tag /= Segment_Tag then
-	    Tree.Tag := Error_Tag;
-	    raise Type_Error with "Route has bad segment";
-	 end if;
-         C := Next(C);
-      end loop;
+      Tree.Segments.Iterate(Check_Segments);
       Tree.Tag := Route_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Friend_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      if Tree.Speed.Tag /= Constant_Number_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Speed' of Friend is not a Constant Number";
-      end if;
+      Type_Check(Tree.Speed, Symbol_Table);
+      Type_Check(Tree.Vulnerability, Symbol_Table);
+      Type_Check(Tree.Effectiveness, Symbol_Table);
+      Type_Check(Tree.Sensor, Symbol_Table);
       
-      if Tree.Vulnerability.Tag /= Constant_Number_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Vulnerability' of Friend is not a Constant Number";
-      end if;
+      Sub_Type_Check(Tree, Tree.Speed.Tag, Constant_Number_Tag,
+                     "'Speed' of Friend is not a Constant Number");
       
-      if Tree.Effectiveness.Tag /= Constant_Number_Tag then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Effectiveness' of Friend is not a Constant Number";
-      end if;
+      Sub_Type_Check(Tree, Tree.Vulnerability.Tag, Constant_Number_Tag,
+                     "'Vulnerability' of Friend is not a Constant Number");
       
-      if Tree.Sensor.Tag /= Sensor_Ptr_Type then
-         Tree.Tag := Error_Tag;
-         raise Type_Error with "'Sensor' of Friend is not a Sensor Ptr";
-      end if;
- 
+      Sub_Type_Check(Tree, Tree.Effectiveness.Tag, Constant_Number_Tag,
+                     "'Effectiveness' of Friend is not a Constant Number");
+      
+      Sub_Type_Check(Tree, Tree.Sensor.Tag, Sensor_Tag,
+                     "'Sensor' of Friend is not a Sensor");
+      
+      Tree.Tag := Friend_Tag;
    end Type_Check;
-
+   
+   
    procedure Type_Check(Tree : access Sensor_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
+      
+      Check_Responders : Iterate_Procedure := 
+        Element_Type_Check(Tree, Symbol_Table, Friend_Tag,
+                           "'Responders' of Sensor is not a Friend");
+      
    begin
-      null;
+      Type_Check(Tree.The_Range, Symbol_Table);
+      Type_Check(Tree.Effectiveness, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.The_Range.Tag, Constant_Number_Tag,
+                     "'The_Range' of Sensor is not a Constant Number");
+      
+      Tree.Responders.Iterate(Check_Responders);
+      
+      Sub_Type_Check(Tree, Tree.Effectiveness.Tag, Constant_Number_Tag,
+                     "'Effectiveness' of Sensor is not a Constant Number");
+      
+      Tree.Tag := Sensor_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Schedule_Type;
