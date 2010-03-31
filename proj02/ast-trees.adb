@@ -82,6 +82,14 @@ package body AST.Trees is
       return Element_Check'Access;
    end Element_Type_Check;
 
+   procedure Bind_Defs(Defs : in Node_List_Type;
+                       Symbol_Table : in Symbol_Table_Ptr_Type;
+                       New_Defs : out Node_List_Type);
+
+   procedure Bind_Actuals(Symbol_Table : in Symbol_Table_Ptr_Type;
+                          Formals : in Node_List_Type;
+                          Actuals : in Node_List_Type;
+                          New_Symbol_Table : out Symbol_Table_Ptr_Type);
 
    procedure Type_Check(Tree : access Geopoint_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
@@ -413,20 +421,47 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Lambda_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      --  TODO
-      null;
+      Type_Check(Tree.Description, Symbol_Table);
+      
    end Type_Check;
 
    procedure Type_Check(Tree : access Def_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
+      ID : String := To_String(Tree.ID);
    begin
-      null;
+      Type_Check(Tree.Lambda, Symbol_Table);
+      
+      if ID = "" then                   --  TODO: or else U = V?
+         Tree.Tag := Void_Tag;
+      else
+         Put_Line(ID);
+         raise Type_Error with "Def type does not match lambda type";
+      end if;
+      
    end Type_Check;
 
    procedure Type_Check(Tree : access ID_Ref_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
+      Value : Node_Ptr_Type;
+      Lambda : Lambda_Ptr_Type;
+      New_Symbols : Symbol_Table_Ptr_Type;
    begin
-      null;
+      Look_Up(Symbol_Table, Tree.ID, Value);
+      
+      if Value.all in Lambda_Type then
+         Lambda := Lambda_Ptr_Type(Value);
+         Bind_Actuals(Symbol_Table, Lambda.Formals, Tree.Actuals, New_Symbols);
+         Tree.Tag := Lambda.Tag;
+         -- TODO: Check that types match between formal and actual
+         -- parameters
+         if False then
+            Tree.Tag := Error_Tag;
+            raise Type_Error with "ID_Ref has a bad type";
+         end if;
+      else
+         Tree.Tag := Value.Tag;
+      end if;
+      
    end Type_Check;
 
    procedure Type_Check(Tree : access Instance_Type;
@@ -448,8 +483,20 @@ package body AST.Trees is
 
    procedure Type_Check(Tree : access Model_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
+      New_Symbols : Node_List_Type;
+      
+      procedure Check_No_Error (C : in Cursor) is
+      begin
+         Type_Check(Element(C), Symbol_Table);
+         if Element(C).Tag = Error_Tag then
+            Tree.Tag := Error_Tag;
+            raise Type_Error with "Def has type error";
+         end if;
+      end Check_No_Error;
    begin
-      null;
+      Bind_Defs(Tree.Defs, Symbol_Table, New_Symbols);
+      Tree.Defs.Iterate(Check_No_Error'Access);
+      Tree.Tag := Void_Tag;
    end Type_Check;
 
    -- Expand all the nodes pointed to by a node list and build a
