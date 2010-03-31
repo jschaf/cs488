@@ -11,6 +11,41 @@ package body AST.Trees is
 
    use Node_Lists;
    
+   type Tag_Array_Type is array (Integer range <>) of Tag_Type;
+   
+   -- Type check a specific field of a tree.
+   procedure Sub_Type_Check (Tree : access Node_Type'Class;
+                             Actual : in Tag_Type;
+                             Expected : in Tag_Array_Type; 
+                             Error_Msg : in String) is
+      Found : Boolean := False;
+   begin
+      for i in Expected'range loop
+         if Actual = Expected(I) then
+            Tree.Tag:= Expected(I);
+            Found := True;
+            exit;
+         end if;
+      end loop;
+      
+      if not Found then
+         Tree.Tag := Error_Tag;
+         raise Type_Error with Error_Msg;
+      end if;
+   end Sub_Type_Check;
+
+   
+   function error (Child_Name : in String; 
+                   Parent_Name : in String; 
+                   Expected : in String) return String is
+      function quote (Target : in String) return String is
+      begin
+         return "'" & Target & "'";
+      end quote;
+   begin
+      return "Subfield " & Quote(Child_Name) & " of " & Quote(Parent_Name) 
+        & " does not match the expected type " & Quote(Expected);
+   end error;
    -- Type check a specific field of a tree.
    procedure Sub_Type_Check (Tree : access Node_Type'Class;
                              Actual : in Tag_Type;
@@ -121,7 +156,6 @@ package body AST.Trees is
       Tree.Tag := Friend_Tag;
    end Type_Check;
    
-   
    procedure Type_Check(Tree : access Sensor_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
       
@@ -147,84 +181,239 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Schedule_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      --  {Start, Number_Tag};
+      --  {Interval, Number_Tag};
+      
+      Type_Check(Tree.Start, Symbol_Table);
+      Type_Check(Tree.Interval, Symbol_Table);
+      
+      
+      
+      Tree.Tag := Schedule_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Trip_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      --  {Friend, Friend_Tag};
+      --  {Route, Route_Tag};
+      --  {Schedule, Schedule_Tag};
+      
+      Type_Check(Tree.Friend, Symbol_Table);
+      Type_Check(Tree.Route, Symbol_Table);
+      Type_Check(Tree.Schedule, Symbol_Table);
+      
+      
+      Tree.Tag := Trip_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Threat_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
-   begin
-      null;
-   end Type_Check;
+      
+      procedure Segment_Check (C : in Cursor) is
+      begin
+         Type_Check(Element(C), Symbol_Table);
+         Sub_Type_Check(Tree, Element(C).Tag, 
+                        Tag_Array_Type'(Segment_Tag, Route_Tag),
+                        Error("Target_Segment", "Threat", "Segment or Route"));
+      end Segment_Check;
 
+      Check_Segments : Iterate_Procedure := 
+        Element_Type_Check(Tree, Symbol_Table, Segment_Tag,
+                           "Route has bad segment");
+   begin
+      --  [Target_Segments, Segment || Route];
+      --  {Effectiveness, Number_Tag};
+      --  {Vulnerability, Number_Tag};
+      --  {Schedule, Schedule_Tag};
+      --  {Duration, Number_Tag};
+        
+      Type_Check(Tree.Effectiveness, Symbol_Table);
+      Type_Check(Tree.Vulnerability, Symbol_Table);
+      Type_Check(Tree.Schedule, Symbol_Table);
+      Type_Check(Tree.Duration, Symbol_Table);
+      
+      Tree.Target_Segments.Iterate(Check_Segments);
+
+      Sub_Type_Check(Tree, Tree.Effectiveness.Tag, Number_Tag,
+                     Error("Effectiveness", "Threat", "Number"));
+      
+      Sub_Type_Check(Tree, Tree.Vulnerability.Tag, Number_Tag,
+                     Error("Vulnerability", "Threat", "Number"));
+                     
+      Sub_Type_Check(Tree, Tree.Schedule.Tag, Schedule_Tag,
+                     Error("Schedule", "Threat", "Schedule"));
+                                    
+      Sub_Type_Check(Tree, Tree.Duration.Tag, Number_Tag,
+                     Error("Duration", "Threat", "Number"));
+                                                   
+      Tree.Tag := Threat_Tag;
+   end Type_Check;
+   
+   subtype Num_Tag_Types is Tag_Type range Number_Tag .. Constant_Number_Tag;
+   
+   function Promote (A, B : in Tag_Type) return Tag_Type is
+      A_Is_Num : Boolean := A in Num_Tag_Types;
+      B_Is_Num : Boolean := B in Num_Tag_Types;
+   begin
+      if A_Is_Num and B_Is_Num then
+         -- Number_Tag is lower than Constant_Number_Tag so this
+         -- returns the least specific type.
+         return Tag_Type'Min(A, B);
+      else
+         return Error_Tag;
+      end if;
+   end Promote;
+   
    procedure Type_Check(Tree : access Add_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.LHS, Symbol_Table);
+      Type_Check(Tree.RHS, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.LHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("LHS", "Add", "Number or Constant"));
+      
+      Sub_Type_Check(Tree, Tree.RHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("RHS", "Add", "Number or Constant"));
+      
+      Tree.Tag := Promote(Tree.LHS.Tag, Tree.RHS.Tag);
    end Type_Check;
 
    procedure Type_Check(Tree : access Sub_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.LHS, Symbol_Table);
+      Type_Check(Tree.RHS, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.LHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("LHS", "Sub", "Number or Constant"));
+      
+      Sub_Type_Check(Tree, Tree.RHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("RHS", "Sub", "Number or Constant"));
+      
+      Tree.Tag := Promote(Tree.LHS.Tag, Tree.RHS.Tag);
    end Type_Check;
 
    procedure Type_Check(Tree : access Mul_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.LHS, Symbol_Table);
+      Type_Check(Tree.RHS, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.LHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("LHS", "Mul", "Number or Constant"));
+      
+      Sub_Type_Check(Tree, Tree.RHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("RHS", "Mul", "Number or Constant"));
+
+      Tree.Tag := Promote(Tree.LHS.Tag, Tree.RHS.Tag);
    end Type_Check;
 
    procedure Type_Check(Tree : access Div_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.LHS, Symbol_Table);
+      Type_Check(Tree.RHS, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.LHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("LHS", "Div", "Number or Constant"));
+      
+      Sub_Type_Check(Tree, Tree.RHS.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag),
+                     Error("RHS", "Div", "Number or Constant"));
+
+      Tree.Tag := Promote(Tree.LHS.Tag, Tree.RHS.Tag);
    end Type_Check;
 
    procedure Type_Check(Tree : access Neg_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.X, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.X.Tag, 
+                     Tag_Array_Type'(Number_Tag, Constant_Number_Tag, 
+                                     Segment_Tag),
+                     Error("X", "Neg", "Segment, Number or Constant"));
+
+      Tree.Tag := Segment_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Uniform_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.Min, Symbol_Table);
+      Type_Check(Tree.Max, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.Min.Tag, Constant_Number_Tag,
+                     Error("Min", "Uniform", "Constant Number"));
+      
+      Sub_Type_Check(Tree, Tree.Max.Tag, Constant_Number_Tag,
+                     Error("Max", "Uniform", "Constant Number"));
+      
+      Tree.Tag := Number_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Exponential_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.Beta, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.Beta.Tag, Constant_Number_Tag,
+                     Error("Beta", "Exponential", "Constant Number"));
+      
+      Tree.Tag := Number_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Normal_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      Type_Check(Tree.Mu, Symbol_Table);
+      Type_Check(Tree.Sigma, Symbol_Table);
+      
+      Sub_Type_Check(Tree, Tree.Mu.Tag, Constant_Number_Tag,
+                     Error("Mu", "Normal", "Constant Number"));
+      
+      Sub_Type_Check(Tree, Tree.Sigma.Tag, Constant_Number_Tag,
+                     Error("Sigma", "Normal", "Constant Number"));
+                     
+      Tree.Tag := Number_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Literal_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
-   end Type_Check;
-
-   procedure Type_Check(Tree : access Lambda_Type;
-                        Symbol_Table : in Symbol_Table_Ptr_Type) is
-   begin
-      null;
+      Tree.Tag := Constant_Number_Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Formal_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
+      Tag : String := To_String(Tree.ID);
    begin
+      
+      if    Tag = "number"   then Tree.Tag := Number_Tag;
+      elsif Tag = "point"    then Tree.Tag := Geopoint_Tag;
+      elsif Tag = "segment"  then Tree.Tag := Segment_Tag;
+      elsif Tag = "route"    then Tree.Tag := Route_Tag;
+      elsif Tag = "friend"   then Tree.Tag := Friend_Tag;
+      elsif Tag = "schedule" then Tree.Tag := Schedule_Tag;
+      elsif Tag = "sensor"   then Tree.Tag := Sensor_Tag;
+      else
+         Tree.Tag := Error_Tag;
+      end if;
+   end Type_Check;
+   
+   procedure Type_Check(Tree : access Lambda_Type;
+                        Symbol_Table : in Symbol_Table_Ptr_Type) is
+   begin
+      --  TODO
       null;
    end Type_Check;
 
@@ -243,7 +432,18 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Instance_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null;
+      --  {Description, Trip || Threat}
+      
+      Type_Check(Tree.Description, Symbol_Table);
+      
+      Sub_Type_Check(Tree      => Tree, 
+                     Actual    => Tree.Description.Tag, 
+                     Expected  => Tag_Array_Type'(Trip_Tag, Threat_Tag),
+                     Error_Msg => Error("Description", 
+                                        "Instance", 
+                                        "Trip or Threat"));
+                     
+      Tree.Tag := Tree.Description.Tag;
    end Type_Check;
 
    procedure Type_Check(Tree : access Model_Type;
