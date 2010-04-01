@@ -15,6 +15,11 @@ package AST.Tables is
       Value        : in Node_Ptr_Type);
 
    Redefinition : exception;
+   
+   -- Repace an existing ID with Value.
+   procedure Replace (Symbol_Table : in Symbol_Table_Ptr_Type; 
+                      ID : in String_Handle_Type; 
+                      Value : in Node_Ptr_Type);
 
    -- Look up the given Id in a symbol table and return its value.  Raises
    -- an Undefined exception if the ID is not in the table.

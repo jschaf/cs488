@@ -21,7 +21,20 @@ package body AST.Tables is
       when Constraint_Error =>
          raise Redefinition with To_String(Id);
    end Insert;
-
+   
+   procedure Replace (Symbol_Table : in Symbol_Table_Ptr_Type; 
+                      ID : in String_Handle_Type; 
+                      Value : in Node_Ptr_Type) is
+   begin
+      Symbol_Maps.Replace(Symbol_Table.Map,
+                          Id,
+                          Symbol_Table_Entry_Type'(Id => Id, Value => Value));
+   exception
+      when Constraint_Error =>
+         raise Constraint_Error 
+           with "Attempting to redefine undefined definition " & To_String(ID);
+   end Replace;
+   
    -- Look up an id in a symbol table, which is possibly nested.  Return the
    -- value of the innermost instance of the id.  Raise an Undefined exception
    -- if the id is not found at all.  Values are syntax trees.
