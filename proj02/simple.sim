@@ -1,0 +1,17 @@
+description
+
+  O  = (0, 0);
+  W  = (-10,   0);
+
+  s1 = segment O -> W;
+  r1 = route (s1);
+
+  
+  truck = friend 10;
+  
+  mail : trip;
+
+  mail = trip truck -> r1;
+
+instance
+  mainInstance : mail;
