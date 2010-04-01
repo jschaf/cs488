@@ -25,9 +25,36 @@ package body AST.Trees is
         & " does not match the expected type " & Quote(Expected);
    end Error;
    
+   function Is_Number(Tree : access Node_Type'Class) return Boolean is
+   begin
+      return Tree.Tag = Number_Tag or Tree.Tag = Constant_Number_Tag;
+   end Is_Number;
+
+   function Is_Optionally(Tree : access Node_Type'Class;
+                          Tag : in Tag_Type) return Boolean is
+   begin
+      return Tree = Null_Node_Ptr or Tree.Tag = Tag or
+        (Tag = Number_Tag and Tree.Tag = Constant_Number_Tag);
+   end Is_Optionally;
    
-   type Tag_Array_Type is array (Integer range <>) of Tag_Type;
-   -- Assert that a field in a tree matches one of the expected tags.
+   -- Return the least specific numeric type of A and B.  Return
+   -- Error_Tag if either A or B is not a number.
+   function Promote (A, B : access Node_Type'Class) return Tag_Type is
+   begin
+      if Is_Number(A) and Is_Number(B) then
+         -- Number_Tag is lower than Constant_Number_Tag so this
+         -- returns the least specific type.
+         return Tag_Type'Min(A.Tag, B.Tag);
+      else
+         return Error_Tag;
+      end if;
+   end Promote;
+
+   
+   type Tag_Array_Type is array (Natural range <>) of Tag_Type;
+   
+   -- Assert that a field in a tree matches a tag in the expected
+   -- array.
    procedure Type_Assert (Tree : access Node_Type'Class;
                           Actual : access Node_Type'Class;
                           Expected : in Tag_Array_Type;
@@ -54,7 +81,11 @@ package body AST.Trees is
                           Expected : in Tag_Type;
                           Error_Msg : in String) is
    begin
-      Type_Assert(Tree, Actual, Tag_Array_Type'(1 => Expected), Error_Msg);
+      if Is_Optionally(Actual, Expected) then
+         return;
+      else
+         Type_Assert(Tree, Actual, Tag_Array_Type'(1 => Expected), Error_Msg);
+      end if;
    end Type_Assert;
 
    -- Type check each element in a node list;
@@ -108,16 +139,17 @@ package body AST.Trees is
       Type_Check(Tree.Vulnerability, Symbol_Table);
 
       Type_Assert(Tree, Tree.A, Geopoint_Tag,
-                  "'A' of segment is not a geopoint");
+                  Error("A", "Segment", "Geopoint"));
 
       Type_Assert(Tree, Tree.B, Geopoint_Tag,
-                  "'B' of segment is not a geopoint");
+                  Error("B", "Segment", "Geopoint"));
+
 
       Type_Assert(Tree, Tree.Trafficability, Constant_Number_Tag,
-                  "'Trafficability' of segment is not a constant number");
+                  Error("Trafficability", "Segment", "Constant Number"));
 
       Type_Assert(Tree, Tree.Vulnerability, Constant_Number_Tag,
-                  "'Vulnerability' of segment is not a constant number");
+                  Error("Vulnerability", "Segment", "Constant Number"));
 
       Tree.Tag := Segment_Tag;
    end Type_Check;
@@ -175,13 +207,8 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Schedule_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      --  {Start, Number_Tag};
-      --  {Interval, Number_Tag};
-
       Type_Check(Tree.Start, Symbol_Table);
       Type_Check(Tree.Interval, Symbol_Table);
-
-
 
       Type_Assert(Tree, Tree.Start, Number_Tag,
                   Error("Start", "Schedule", "Number"));
@@ -195,14 +222,9 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Trip_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      --  {Friend, Friend_Tag};
-      --  {Route, Route_Tag};
-      --  {Schedule, Schedule_Tag};
-
       Type_Check(Tree.Friend, Symbol_Table);
       Type_Check(Tree.Route, Symbol_Table);
       Type_Check(Tree.Schedule, Symbol_Table);
-
 
       Type_Assert(Tree, Tree.Friend, Friend_Tag,
                   Error("Friend", "Trip", "Friend"));
@@ -228,18 +250,12 @@ package body AST.Trees is
       end Segment_Check;
 
    begin
-      --  [Target_Segments, Segment || Route];
-      --  {Effectiveness, Number_Tag};
-      --  {Vulnerability, Number_Tag};
-      --  {Schedule, Schedule_Tag};
-      --  {Duration, Number_Tag};
-
       Type_Check(Tree.Effectiveness, Symbol_Table);
       Type_Check(Tree.Vulnerability, Symbol_Table);
       Type_Check(Tree.Schedule, Symbol_Table);
       Type_Check(Tree.Duration, Symbol_Table);
 
-      Type_Check_List(Tree.Target_Segments, Symbol_Table);
+      Tree.Target_Segments.Iterate(Segment_Check'Access);
       
       Type_Assert(Tree, Tree.Effectiveness, Number_Tag,
                   Error("Effectiveness", "Threat", "Number"));
@@ -255,29 +271,6 @@ package body AST.Trees is
 
       Tree.Tag := Threat_Tag;
    end Type_Check;
-
-   function Is_Number(Tree : access Node_Type'Class) return Boolean is
-   begin
-      return Tree.Tag = Number_Tag or Tree.Tag = Constant_Number_Tag;
-   end Is_Number;
-
-   function Is_Optionally(Tree : access Node_Type'Class;
-                          Tag : in Tag_Type) return Boolean is
-   begin
-      return Tree = Null_Node_Ptr or Tree.Tag = Tag or
-        (Tag = Number_Tag and Tree.Tag = Constant_Number_Tag);
-   end Is_Optionally;
-
-   function Promote (A, B : access Node_Type'Class) return Tag_Type is
-   begin
-      if Is_Number(A) and Is_Number(B) then
-         -- Number_Tag is lower than Constant_Number_Tag so this
-         -- returns the least specific type.
-         return Tag_Type'Min(A.Tag, B.Tag);
-      else
-         return Error_Tag;
-      end if;
-   end Promote;
 
    procedure Type_Check(Tree : access Add_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
@@ -410,28 +403,18 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Formal_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      null; -- Defined by the parser
+      null; -- Predefined in the parser
    end Type_Check;
 
    procedure Type_Check(Tree : access Lambda_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
 
-      Formals_Error : Boolean := False;
-
-      procedure Check_Formal (C : in Cursor) is
-         E : Node_Ptr_Type := Element(C);
-      begin
-         Type_Check(E, Symbol_Table);
-         if E.Tag = Error_Tag or else E.Tag = Null_Tag then
-            Formals_Error := True;
-         end if;
-      end Check_Formal;
-
       New_Symbol_Table : Symbol_Table_Ptr_Type;
    begin
-
-      Tree.Formals.Iterate(Check_Formal'Access);
+      Type_Check_List(Tree.Formals, Symbol_Table);
       
+      -- This inserts the ID for each Formal with the corresponding
+      -- type into a new Symbol Table.
       Bind_Actuals(Symbol_Table, Tree.Formals, Tree.Formals, New_Symbol_Table);
 
       Type_Check(Tree.Description, New_Symbol_Table);
@@ -457,7 +440,6 @@ package body AST.Trees is
          Tree.Tag := Error_Tag;
          raise Type_Error with "Def type does not match lambda type";
       end if;
-
    end Type_Check;
 
    procedure Type_Check(Tree : access ID_Ref_Type;
@@ -465,6 +447,7 @@ package body AST.Trees is
       Value : Node_Ptr_Type;
       Lambda : Lambda_Ptr_Type;
       New_Symbols : Symbol_Table_Ptr_Type;
+      
       procedure Formal_Matches_Actual (C : in Cursor) is
          Formal : Formal_Ptr_Type := Formal_Ptr_Type(Element(C));
          Actual : Node_Ptr_Type;
@@ -473,27 +456,22 @@ package body AST.Trees is
          Type_Check(Actual, Symbol_Table);
          if Formal.Tag /= Actual.Tag then
             Tree.Tag := Error_Tag;
-            raise Type_Error with Error("Actual ",
-                                        "ID_Ref " & To_String(Tree.ID),
-                                        To_String(Formal.ID));
+            raise Type_Error 
+              with Error("Actual", "ID_Ref " & To_String(Tree.ID), 
+                         To_String(Formal.ID));
          end if;
       end Formal_Matches_Actual;
+      
+      
+      
    begin
       Look_Up(Symbol_Table, Tree.ID, Value);
 
       if Value.all in Lambda_Type then
          Lambda := Lambda_Ptr_Type(Value);
          Bind_Actuals(Symbol_Table, Lambda.Formals, Tree.Actuals, New_Symbols);
-
          Lambda.Formals.Iterate(Formal_Matches_Actual'Access);
-
          Tree.Tag := Lambda.Tag;
-         -- TODO: Check that types match between formal and actual
-         -- parameters
-         if False then
-            Tree.Tag := Error_Tag;
-            raise Type_Error with "ID_Ref has a bad type";
-         end if;
       else
          Tree.Tag := Value.Tag;
       end if;
@@ -503,8 +481,6 @@ package body AST.Trees is
    procedure Type_Check(Tree : access Instance_Type;
                         Symbol_Table : in Symbol_Table_Ptr_Type) is
    begin
-      --  {Description, Trip || Threat}
-
       Type_Check(Tree.Description, Symbol_Table);
 
       Type_Assert(Tree      => Tree,
@@ -530,7 +506,6 @@ package body AST.Trees is
          end if;
       end Check_No_Error;
    begin
-      --  Check formals and return type (can defer check)
       Bind_Defs(Tree.Defs, Symbol_Table, New_Symbols);
       Tree.Defs.Iterate(Check_No_Error'Access);
       Tree.Instances.Iterate(Check_No_Error'Access);
