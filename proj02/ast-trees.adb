@@ -445,13 +445,6 @@ package body AST.Trees is
       
       Tree.Formals.Iterate(Check_Formal'Access);
          
-      -- TODO: is this right?
-      --  if Formals_Error then
-      --     Tree.Tag := Error_Tag;
-      --     raise Type_Error with 
-      --       Error("Formals", "Lambda", "not an Error or Null");
-      --  end if;
-         
       Bind_Actuals(Symbol_Table, Tree.Formals, Tree.Formals, New_Symbol_Table);
 
       Type_Check(Tree.Description, New_Symbol_Table);
