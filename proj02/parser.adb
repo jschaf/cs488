@@ -844,7 +844,8 @@ package body Parser is
                Rtn := Node_Ptr_Type(Literal);
                Advance;
             when others =>
-               raise Syntax_Error with "expected an arithmetic factor";
+               raise Syntax_Error 
+                 with "expected an arithmetic factor, not " & Look_Ahead'img;
          end case;
          Debug ("-Factor");
       end Factor;

@@ -19,7 +19,9 @@ package body AST.Tables is
                          Symbol_Table_Entry_Type'(Id => Id, Value => Value));
    exception
       when Constraint_Error =>
-         raise Redefinition with To_String(Id);
+         raise Redefinition 
+           with ("Attempting to insert the previously inserted ID: " 
+                   & To_String(Id));
    end Insert;
    
    procedure Replace (Symbol_Table : in Symbol_Table_Ptr_Type; 
