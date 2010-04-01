@@ -257,7 +257,7 @@ package body Parser is
       --                           |  ID  [ ( <parameter-list> ) ] : <type-id> ;
       procedure Named_Description (Rtn_Def : out Def_Ptr_Type) is
          Formal : Formal_Ptr_Type;
-	 Lambda : Lambda_Ptr_Type;
+         Lambda : Lambda_Ptr_Type;
       begin
          Debug ("+Named_Description");
          Rtn_Def := new Def_Type;
@@ -275,25 +275,25 @@ package body Parser is
                Advance;
             end loop;
             Match (Right_Paren);
-	 end if;
-	 if Look_Ahead = Equals then
-	    Advance;
-	    Description (Lambda.Description);
+         end if;
+         if Look_Ahead = Equals then
+            Advance;
+            Description (Lambda.Description);
 
-	    -- Store id in geopoint to maintain logical labels for graph algorithms.
-	    if Lambda.Description.all in Geopoint_Type then
-	       Geopoint_Ptr_Type(Lambda.Description).Id := Rtn_Def.Id;
-	    end if;
-	 else
-	    Match(Colon);
-	    Formal := new Formal_Type;
-	    Formal.Id := To_Handle("{return}");
-	    Lambda.Description := Node_Ptr_Type(Formal);
-	    Advance;
-	 end if;
+            -- Store id in geopoint to maintain logical labels for graph algorithms.
+            if Lambda.Description.all in Geopoint_Type then
+               Geopoint_Ptr_Type(Lambda.Description).Id := Rtn_Def.Id;
+            end if;
+         else
+            Match(Colon);
+            Formal := new Formal_Type;
+            Formal.Id := To_Handle("{return}");
+            Lambda.Description := Node_Ptr_Type(Formal);
+            Type_Id(Formal.Tag);
+         end if;
          Match (Semi);
 
-	 Debug ("-Named_Description");
+         Debug ("-Named_Description");
       end Named_Description;
 
       --  5. <parameter> --> ID : <type-id>
@@ -303,8 +303,8 @@ package body Parser is
          Rtn_Formal := new Formal_Type;
          Rtn_Formal.Id := To_Handle(Token_String);
          Match (Id);
-	 Match (Colon);
-	 Advance;
+         Match (Colon);
+         Type_Id(Rtn_Formal.Tag);
          Debug ("-Parameter");
       end Parameter;
 
@@ -328,6 +328,8 @@ package body Parser is
                Rtn_Tag := Schedule_Tag;
             when Keyword_Sensor =>
                Rtn_Tag := Sensor_Tag;
+            when Keyword_Trip =>
+               Rtn_Tag := Trip_Tag;
             when others =>
                raise Syntax_Error with "Expected type identifier";
          end case;
@@ -699,7 +701,7 @@ package body Parser is
          Debug ("+Expr");
          Term (Rtn);
          while Look_Ahead = Plus or Look_Ahead = Minus loop
-	    Advance;
+            Advance;
             if Look_Ahead = Plus then
                declare
                   Add : Add_Ptr_Type := new Add_Type;
