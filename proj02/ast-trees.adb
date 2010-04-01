@@ -462,8 +462,6 @@ package body AST.Trees is
          end if;
       end Formal_Matches_Actual;
       
-      
-      
    begin
       Look_Up(Symbol_Table, Tree.ID, Value);
 
@@ -506,7 +504,7 @@ package body AST.Trees is
          end if;
       end Check_No_Error;
    begin
-      Bind_Defs(Tree.Defs, Symbol_Table, New_Symbols);
+      Bind_Forward_Defs(Tree.Defs, Symbol_Table, New_Symbols);
       Tree.Defs.Iterate(Check_No_Error'Access);
       Tree.Instances.Iterate(Check_No_Error'Access);
       Tree.Tag := Void_Tag;
