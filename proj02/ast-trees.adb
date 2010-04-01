@@ -8,21 +8,35 @@ with AST.Tables;
 use  AST.Tables;
 
 package body AST.Trees is
-
+   
+   DEBUG : constant Boolean := True;
    use Node_Lists;
-
+   
+   procedure Put_Debug (Input : in String) is
+   begin
+      if DEBUG then
+         Put_Line(Standard_Error, Input);
+      end if;
+   end Put_Debug;
 
    -- Generate an error string.
    function Error (Child_Name : in String;
                    Parent_Name : in String;
-                   Expected : in String) return String is
+                   Expected : in String;
+                   Name : in String := "") return String is
       function Quote (Target : in String) return String is
       begin
          return "'" & Target & "'";
       end Quote;
-   begin
-      return "Subfield " & Quote(Child_Name) & " of " & Quote(Parent_Name)
+      
+      Base : String := "Subfield " & Quote(Child_Name) & " of " & Quote(Parent_Name)
         & " does not match the expected type " & Quote(Expected);
+   begin
+      if Name = "" then
+         return Base;
+      else
+         return Base & " in " & Quote(Name);
+      end if;
    end Error;
    
    function Is_Number(Tree : access Node_Type'Class) return Boolean is
@@ -102,10 +116,6 @@ package body AST.Trees is
    end Type_Check_List;
    
    
-   procedure Bind_Forward_Defs(Defs : in Node_List_Type;
-                               Symbol_Table : in Symbol_Table_Ptr_Type;
-                               New_Defs : out Node_List_Type);
-
    procedure Bind_Defs(Defs : in Node_List_Type;
                        Symbol_Table : in Symbol_Table_Ptr_Type;
                        New_Defs : out Node_List_Type);
@@ -122,10 +132,12 @@ package body AST.Trees is
       Type_Check(Tree.Y, Symbol_Table);
 
       Type_Assert(Tree, Tree.X, Constant_Number_Tag,
-                  Error("X coordinate", "Geopoint", "Constant Number"));
+                  Error("X coordinate", "Geopoint", "Constant Number", 
+                        To_String(Tree.ID)));
 
       Type_Assert(Tree, Tree.Y, Constant_Number_Tag,
-                  Error("Y coordinate", "Geopoint", "Constant Number"));
+                  Error("Y coordinate", "Geopoint", "Constant Number",
+                        To_String(Tree.ID)));
 
       Tree.Tag := Geopoint_Tag;
    end Type_Check;
@@ -416,12 +428,13 @@ package body AST.Trees is
       -- This inserts the ID for each Formal with the corresponding
       -- type into a new Symbol Table.
       Bind_Actuals(Symbol_Table, Tree.Formals, Tree.Formals, New_Symbol_Table);
-
+      --  Put(New_Symbol_Table);
       Type_Check(Tree.Description, New_Symbol_Table);
 
       if Tree.Description.Tag = Error_Tag then
          Tree.Tag := Error_Tag;
-         raise Type_Error with Error("Description", "Lambda", "not an Error");
+         raise Type_Error with Error("Description", "Lambda", "not an Error",
+                                     To_String(Tree.ID));
       end if;
 
       Tree.Tag := Tree.Description.Tag;
@@ -438,7 +451,8 @@ package body AST.Trees is
          Tree.Tag := Void_Tag;
       else
          Tree.Tag := Error_Tag;
-         raise Type_Error with "Def type does not match lambda type";
+         raise Type_Error with "Def type does not match lambda type in " 
+           & To_String(Tree.ID);
       end if;
    end Type_Check;
 
@@ -447,20 +461,35 @@ package body AST.Trees is
       Value : Node_Ptr_Type;
       Lambda : Lambda_Ptr_Type;
       New_Symbols : Symbol_Table_Ptr_Type;
+      Name : String := To_String(Tree.ID);
       
-      procedure Formal_Matches_Actual (C : in Cursor) is
-         Formal : Formal_Ptr_Type := Formal_Ptr_Type(Element(C));
+      procedure Formals_Match_Actuals(Formals : in Node_List_Type;
+                                      Actuals : in Node_List_Type) is
+         Last : Natural := Natural(Formals.Length);
+         Formal : Formal_Ptr_Type;
          Actual : Node_Ptr_Type;
       begin
-         Look_Up(Symbol_Table, Formal.ID, Actual);
-         Type_Check(Actual, Symbol_Table);
-         if Formal.Tag /= Actual.Tag then
-            Tree.Tag := Error_Tag;
+         if Formals.Length /= Actuals.Length then
             raise Type_Error 
-              with Error("Actual", "ID_Ref " & To_String(Tree.ID), 
-                         To_String(Formal.ID));
+              with ("The number of formal parameters does not match the number" &
+                      " of actual parameters in " & Name);
          end if;
-      end Formal_Matches_Actual;
+         
+         for i in Natural range 1 .. Last loop
+            Formal := Formal_Ptr_Type(Formals.Element(I));
+            Actual := Actuals.Element(I);
+            
+            if Formal.Tag = Number_Tag and Actual.Tag = Constant_Number_Tag then
+               return;
+               
+            elsif Formal.Tag /= Actual.Tag then
+               raise Type_Error with "Formal parameter " & To_String(Formal.ID) 
+                 & " with type " & Formal.Tag'IMG & " does not match actual type"
+                 & " in " & Name & " with type " & Actuals.Element(I).Tag'IMG;
+            end if;
+         end loop;
+         
+      end Formals_Match_Actuals;
       
    begin
       Look_Up(Symbol_Table, Tree.ID, Value);
@@ -468,12 +497,12 @@ package body AST.Trees is
       if Value.all in Lambda_Type then
          Lambda := Lambda_Ptr_Type(Value);
          Bind_Actuals(Symbol_Table, Lambda.Formals, Tree.Actuals, New_Symbols);
-         Lambda.Formals.Iterate(Formal_Matches_Actual'Access);
+         Type_Check_List(Tree.Actuals, New_Symbols);
+         Formals_Match_Actuals(Lambda.Formals, Tree.Actuals);
          Tree.Tag := Lambda.Tag;
       else
          Tree.Tag := Value.Tag;
       end if;
-
    end Type_Check;
 
    procedure Type_Check(Tree : access Instance_Type;
@@ -486,7 +515,8 @@ package body AST.Trees is
                   Expected  => Tag_Array_Type'(Trip_Tag, Threat_Tag),
                   Error_Msg => Error("Description",
                                      "Instance",
-                                     "Trip or Threat"));
+                                     "Trip or Threat",
+                                     To_String(Tree.ID)));
 
       Tree.Tag := Tree.Description.Tag;
    end Type_Check;
@@ -504,7 +534,7 @@ package body AST.Trees is
          end if;
       end Check_No_Error;
    begin
-      Bind_Forward_Defs(Tree.Defs, Symbol_Table, New_Symbols);
+      Bind_Defs(Tree.Defs, Symbol_Table, New_Symbols);
       Tree.Defs.Iterate(Check_No_Error'Access);
       Tree.Instances.Iterate(Check_No_Error'Access);
       Tree.Tag := Void_Tag;
@@ -537,6 +567,40 @@ package body AST.Trees is
       return Symbol_Table.Map.Contains(Def.ID);
    end Is_Defined;
    
+   type Str_Array_Type is array (Natural range <>) of String_Handle_Type;
+   
+   -- Compare the signatures of two lambda types.  Raise a Type_Error
+   -- if any of the following checks are different: number of formal
+   -- parameters, the types of the formal parameters, the return
+   -- type, the names of the formal parameters.
+   procedure Compare_Defs (Old_Lambda, New_Lambda : in Lambda_Ptr_Type) is
+      Rest_Str : String := "for the declarations of " & To_String(Old_Lambda.ID);
+      
+      Last : Natural := Natural(Old_Lambda.Formals.Length);
+      Old_Formal, New_Formal : Formal_Ptr_Type;
+   begin
+      if Old_Lambda.Formals.Length /= New_Lambda.Formals.Length then
+         raise Type_Error 
+           with "The number of formal parameters are different.";
+      
+      elsif Old_Lambda.Tag /= New_Lambda.Tag then
+         raise Type_Error 
+           with "The return type is different " & Rest_Str;
+      end if;
+      
+      for I in Natural range 1 .. Last loop
+         Old_Formal := Formal_Ptr_Type(Old_Lambda.Formals.Element(I));
+         New_Formal := Formal_Ptr_Type(New_Lambda.Formals.Element(I));
+         if Old_Formal.Tag /= New_Formal.Tag then
+            raise Type_Error with "Formal types do not match";
+         elsif Old_Formal.ID /= New_Formal.ID then
+            raise Type_Error 
+              with "Formal Parameter names do not match";
+         end if;
+      end loop;
+      
+   end Compare_Defs;
+   
    procedure Bind_Def (Def : in Def_Ptr_Type; 
                        Symbol_Table : in Symbol_Table_Ptr_Type) is
       
@@ -546,11 +610,7 @@ package body AST.Trees is
    begin
 
       if not Is_Defined(Def, Symbol_Table) then
-         Put_Line("Inserting prev undefined: " & To_String(Def.ID));
-         Put(Symbol_Table);
          Insert(Symbol_Table, Def.ID, Def.Lambda);
-         New_Line(2);
-         Put(Symbol_Table);
       else
          Look_Up(Symbol_Table, Def.ID, Value);
          
@@ -561,18 +621,8 @@ package body AST.Trees is
          end if;
          
          if Is_Forward_Def(Old_Lambda) and not Is_Forward_Def(New_Lambda) then
-            Type_Check(Def, Symbol_Table);
-            Put_Line("Inserting prev forward: " & To_String(Def.ID));
-            --  Put_Line("Replacing old definition of " & To_String(Old_Lambda.ID));
-            --  Put(Old_Lambda);
-            New_Line(2);
-            Put(Def);
-            Put(New_Lambda);
-            New_Line(2);
-            Put(Symbol_Table);
+            Compare_Defs(Old_Lambda, New_Lambda);
             Replace(Symbol_Table, Def.ID, Def.Lambda);
-            New_Line(2);
-            Put(Symbol_Table);
          else
             raise Type_Error 
               with "Tried to redefine " & To_String(Def.ID) & " illegally";
@@ -580,9 +630,15 @@ package body AST.Trees is
       end if;
    end Bind_Def;
    
-   procedure Bind_Forward_Defs(Defs : in Node_List_Type;
-                               Symbol_Table : in Symbol_Table_Ptr_Type;
-                               New_Defs : out Node_List_Type) is
+   -- Traverse a given list of defs, which are (id, lambda) pairs.  Add
+   -- these pairs to the symbol table. Then traverse again and expand the
+   -- definitions with no parameters, using the symbol table for lookups.
+   -- Accumulate a new list of defs including only those with no parameters.
+   -- This list isn't used for simulation, but supports animation and debugging.
+   procedure Bind_Defs(Defs : in Node_List_Type;
+                       Symbol_Table : in Symbol_Table_Ptr_Type;
+                       New_Defs : out Node_List_Type) is
+      
       procedure Bind_Def (C : in Cursor) is
          Def : Def_Ptr_Type := Def_Ptr_Type(Element(C));
       begin
@@ -601,38 +657,10 @@ package body AST.Trees is
       
    begin
       Defs.Iterate(Bind_Def'Access);
-      Defs.Iterate(Expand_Def'Access);
-   end Bind_Forward_Defs;
-   
-   -- Traverse a given list of defs, which are (id, lambda) pairs.  Add
-   -- these pairs to the symbol table. Then traverse again and expand the
-   -- definitions with no parameters, using the symbol table for lookups.
-   -- Accumulate a new list of defs including only those with no parameters.
-   -- This list isn't used for simulation, but supports animation and debugging.
-   procedure Bind_Defs(Defs : in Node_List_Type;
-                       Symbol_Table : in Symbol_Table_Ptr_Type;
-                       New_Defs : out Node_List_Type) is
-      C : Cursor;
-      Def : Def_Ptr_Type;
-      Lambda : Lambda_Ptr_Type;
-   begin
-      C  := First(Defs);
-      while C /= No_Element loop
-         Def := Def_Ptr_Type(Element(C));
-         Insert(Symbol_Table, Def.ID, Def.Lambda);
-         C := Next(C);
-      end loop;
-      C  := First(Defs);
-      while C /= No_Element loop
-         Def := Def_Ptr_Type(Element(C));
-         Lambda := Lambda_Ptr_Type(Def.Lambda);
-         if Length(Lambda.Formals) = 0 then
-            Expand(Lambda.Description, Symbol_Table, Lambda.Description);
-            Append(New_Defs, Element(C));
-         end if;
-         C := Next(C);
-      end loop;
+      --  Defs.Iterate(Expand_Def'Access);
+      --  This breaks my code when enabled
    end Bind_Defs;
+   
 
    -- Build a new symbol table that's linked to the previous one.  Insert
    -- mappings for a list of formal parameters to a corresponding list
