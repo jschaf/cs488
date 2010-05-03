@@ -1,0 +1,134 @@
+\documentclass[12pt,letterpaper,titlepage]{article}
+
+\pdfpagewidth 8.5in
+\pdfpageheight 11in 
+
+% 1in margins
+\usepackage[vmargin={1.6in, 0.3in}, hmargin={1in, 1in}]{geometry}
+\usepackage{fontspec,xunicode,xltxtra}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+
+\usepackage{underscore}
+% To get proper looking page headers
+\setlength{\voffset}{-0.5in}
+\setlength{\headsep}{12pt}
+\setlength{\headheight}{15.2pt}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\renewcommand\headrulewidth{0pt}
+\fancyhead[R]{Schafer \thepage}
+
+% Line order is important for these
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont[Ligatures={Common}]{Adobe Garamond Pro}
+\setsansfont{Akzidenz Grotesk Roman} 
+\setmonofont[Scale=0.8]{Consolas}
+
+% Use diffferent styles for section headings
+\usepackage{sectsty} 
+\sectionfont{\sffamily\mdseries\large} 
+\subsectionfont{\rmfamily\mdseries\scshape\normalsize} 
+
+\setcounter{secnumdepth}{0}
+
+\renewcommand{\th}[0]{\textsuperscript{th}}
+\newcommand{\st}[0]{\textsuperscript{st}}
+\newcommand{\nd}[0]{\textsuperscript{nd}}
+\newcommand{\rd}[1]{\textsuperscript{rd}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\mieds}[0]{\textsc{MIEDS}}
+\begin{document}
+
+\input{title}
+\doublespacing
+
+\section{Simulator Description}
+
+The \mieds{} simulator works by initializing the animation, scheduling
+the first events, and then looping through all events, processing each
+and updating the animation, until either no events remain or time is
+exceeded.  The key data structure is \code{Simulation_State_Type}, a
+record containing the current time, event queue, AST of the \mieds
+source code, emplaced hazards, and currently enroute friends.
+
+\subsection{Scheduling Initial Events}
+
+\code{Schedule_Initial_Events} works by processing instances in the
+model section of the \mieds{} sourcecode.  The instance is either a
+trip or threat.  First, the start time is calculated with
+\code{Find_Trip_Schedule_Start} or \code{Find_Threat_Schedule_Start},
+both of which simply lookup start times contained in the associated
+records.  Then, the event is added to the simulation state using
+\code{Schedule_Trip_Start} or \code{Schedule_Hazard}.  This process is
+repeated for all instances in the \mieds{} source code.
+
+\subsection{Looping and Processing Events}
+
+The simulation runs until the simulation state time exceeds the stop
+time, which is defined as the last real number
+(i.e. \code{Real'Last}), or until the simulation state event queue is
+empty.  During each iteration, first, the next event is popped from
+the queue by \code{Get_Next_Event}.  Second, the state simulation time
+is updated to match the current event's time.  Third, the current
+event is processed by calling the polymorphic procedure \code{Handle},
+which is defined for trip start, friend movement, hazard emplacement
+and hazard removal events.  Fourth, the memory for the event is
+deallocated.  Finally, the animation is updated with current
+simulation state.
+
+\subsection{Event Handlers}
+The trip start \code{Handle} procedure appends the trip start event to
+the simulation state \code{Friend_Enroute} list, advances the ID for
+the next friend enroute event, schedules the friend movement and
+schedules the next trip start by adding the trip start interval to the
+event time.
+
+The friend movement\code{Handle} procedure calculates the native speed
+of the friend, advances the friend along its route, and checks for
+trip completion.  If complete, then the event is deleted, else the
+friend enroute information is updated and the next movement is
+scheduled and placed in the simulation state event queue.
+\code{Advance} is most complex part of friend movement, requiring ten
+parameters.  In order of operation \code{Advance}, computes the inital
+segement, checks for stoppers, checks for route completion, updates
+the friend position and checks for stoppage during a partial
+traversal.
+
+
+The hazard emplacement \code{Handle} determines the duration of the
+hazard, then initializes and randomly places the hazard along a
+segment.  If the duration of the is greater than zero, an empty hazard
+emplacement event is appended to the hazards list in the simulation
+state and replaced by the actual hazard after the hazard removal is
+scheduled.  If the duration was not greater than zero, then the event
+is appended and no removal is scheduled.  Finally, the hazard interval
+is computed if necessary.
+
+The hazard removal \code{Handle} simply deletes the hazard from the
+hazards list in the simulation state
+
+\subsection{Event Deallocation}
+
+An instance of \code{Ada.Unchecked_Deallocation} named \code{Free} is
+used to delete already processed events to prevent memory leaks.
+
+
+\section{Changed Data Structures and Code}
+
+Explain
+
+\subsection{Changes to Data Structures}
+1. changes to data structures
+
+
+\subsection{Changes to Code}
+2. changes to code that must be made in order to implement the desired
+simulator function.
+
+Again be as specific as possible by discussing types, procedures, and
+algorithms in detail.
+
+
+\end{document}
