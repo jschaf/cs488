@@ -1,0 +1,89 @@
+\documentclass[12pt,letterpaper,titlepage]{article}
+
+\pdfpagewidth 8.5in
+\pdfpageheight 11in 
+
+% 1in margins
+\usepackage[vmargin={1.6in, 0.3in}, hmargin={1in, 1in}]{geometry}
+\usepackage{eulervm}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+
+
+% Minion support
+% \usepackage[opticals,minionint,textosf,mathlf]{MinionPro}
+
+% XeTeX
+\usepackage[no-math]{fontspec}
+\usepackage{xunicode,xltxtra}
+
+
+\usepackage{underscore}
+% To get proper looking page headers
+\setlength{\voffset}{-0.5in}
+\setlength{\headsep}{12pt}
+\setlength{\headheight}{15.2pt}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\renewcommand\headrulewidth{0pt}
+\fancyhead[R]{Schafer \thepage}
+
+% Line order is important for these
+\defaultfontfeatures{Scale=MatchLowercase,Mapping=tex-text}
+\setromanfont[Ligatures={Common}]{Adobe Garamond Pro}
+\setsansfont{Akzidenz Grotesk Roman} 
+\setmonofont[Scale=0.8]{Consolas}
+
+% Use diffferent styles for section headings
+\usepackage{sectsty} 
+\sectionfont{\sffamily\mdseries\large} 
+\subsectionfont{\rmfamily\mdseries\scshape\normalsize} 
+
+\setcounter{secnumdepth}{0}
+
+\renewcommand{\th}[0]{\textsuperscript{th}}
+\newcommand{\st}[0]{\textsuperscript{st}}
+\newcommand{\nd}[0]{\textsuperscript{nd}}
+\newcommand{\rd}[1]{\textsuperscript{rd}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\mieds}[0]{\textsc{MIEDS}}
+\begin{document}
+
+\input{title}
+\doublespacing
+
+\section{Code Changes}
+
+To record the number of successful and total trips, and the number of
+detonated hazards and total hazards I created a new record with type
+\code{Completion_Data_Type}.  The record simply contains four
+\code{Natural} fields corresponding to the information we wish to
+track.  In the \code{Simulation_State_Type}, I added a new field
+entitled \code{Completion_Data} to allow easy access for updates.  The
+logical place to update such information is in the polymorphic
+procedure \code{Handle} which operates on \code{Friend_Movement_Types}
+because \code{Handle} checks for hazard collisions and completed
+trips.  So after the check for \code{Hazard_ID > 0} (a hazard
+collision occured) and the check to \code{Friend_Is_Hurt}, we call the
+convience procedure, \code{Log_Unsuccessful_Trip} with the current
+state to increment the number of total trips and the number of
+detonated hazard.  When a trip is complete, we use the convenience
+procedure \code{Log_Successful_Trip} to increment the number of
+successful trips and total trips.  Finally, we need to track the total
+number of hazards, which occurs in \code{Handle} for
+\code{Hazard_Emplacement_Type}.  We use the convience procedure
+\code{Log_Hazard_Emplacment} to increment the number of total hazards
+and call this in the opening lines of \code{Handle}
+
+\section{Impact of Point Estimators on Run Length}
+\section{Change in the confidence half-interval over the change in number of runs}
+
+\section{Why are the number of hazards placed unchanging over independent replications?}
+
+\section{How many runs are truly different between 2 runs and 30 runs in the current simulator?}
+
+\section{Output Data}
+
+
+\end{document}

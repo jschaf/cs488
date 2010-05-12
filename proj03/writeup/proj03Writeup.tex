@@ -14,8 +14,8 @@
 % \usepackage[opticals,minionint,textosf,mathlf]{MinionPro}
 
 % XeTeX
-% \usepackage{fontspec}
-% \usepackage{xunicode,xltxtra}
+\usepackage[no-math]{fontspec}
+\usepackage{xunicode,xltxtra}
 
 
 \usepackage{underscore}
@@ -29,11 +29,11 @@
 \renewcommand\headrulewidth{0pt}
 \fancyhead[R]{Schafer \thepage}
 
-% % Line order is important for these
-% \defaultfontfeatures{Scale=MatchLowercase,Mapping=tex-text}
-% \setromanfont[Ligatures={Common}]{Adobe Garamond Pro}
-% \setsansfont{Akzidenz Grotesk Roman} 
-% \setmonofont[Scale=0.8]{Consolas}
+% Line order is important for these
+\defaultfontfeatures{Scale=MatchLowercase,Mapping=tex-text}
+\setromanfont[Ligatures={Common}]{Adobe Garamond Pro}
+\setsansfont{Akzidenz Grotesk Roman} 
+\setmonofont[Scale=0.8]{Consolas}
 
 % Use diffferent styles for section headings
 \usepackage{sectsty} 
@@ -65,28 +65,28 @@ source code, emplaced hazards, and currently enroute friends.
 \subsection{Scheduling Initial Events}
 
 \code{Schedule_Initial_Events} works by processing instances in the
-model section of the \mieds{} sourcecode.  The instance is either a
+model section of the \mieds{} source code.  The instance is either a
 trip or threat.  First, the start time is calculated with
 \code{Find_Trip_Schedule_Start} or \code{Find_Threat_Schedule_Start},
 both of which simply lookup start times contained in the associated
 records.  Then, the event is added to the simulation state using
-\code{Schedule_Trip_Start} or \code{Schedule_Hazard}.  This process is
-repeated for all instances in the \mieds{} source code.
+\code{Schedule_Trip_Start} or \code{Schedule_Hazard} which inserts the
+event into \code{State.Event_Queue}.  This process is repeated for all
+instances in the \mieds{} source code.
 
 \subsection{Looping and Processing Events}
 
 The simulation runs until the simulation state time exceeds the stop
-time, which is defined as the last real number
-(i.e. \code{Real'Last}), or until the simulation state event queue is
-empty.  During each iteration, first, the next event is popped from
-the queue by \code{Get_Next_Event}.  Second, the state simulation
-time, \code{State.Time} is set to the current \code{Event.Time}.
-Third, the current event is processed by calling the polymorphic
-procedure \code{Handle}, which is defined for \code{Trip_Start_Type},
-\code{Friend_Movement_Type}, \code{Hazard_Emplacement_Type} and
-\code{Hazard_Removal_Type} events.  Fourth, the memory for the event
-is deallocated.  Finally, the animation is updated with current
-simulation state.
+time, defined by default as the last real number (\code{Real'Last}),
+or until \code{State.Event_Queue} is empty.  Five stages comprise each
+iteration.  First, the next event is popped from the queue by
+\code{Get_Next_Event}.  Second, \code{State.Time} is set to the
+current \code{Event.Time}.  Third, the current event is processed by
+calling the polymorphic procedure \code{Handle}, which is defined for
+\code{Trip_Start_Type}, \code{Friend_Movement_Type},
+\code{Hazard_Emplacement_Type} and \code{Hazard_Removal_Type} events.
+Fourth, the memory for the event is deallocated.  Finally, the
+animation is updated with current simulation state.
 
 \subsection{Event Handlers}
 The trip start \code{Handle} procedure first appends the trip start
@@ -121,76 +121,70 @@ initializes and randomly sets the hazard location with
 (\code{Duration > 0.0}), then an empty hazard is created and appended
 to \code{State.Hazards} as a placeholder,
 \code{Schedule_Hazard_Removal} schedules the removal event for the
-hazards, and the placeholder hazards is replaced with the actual
-hazard.  If the hazards is not viable and scheduled to be removed,
-then hazards is simply appended to \code{State.Hazards}.  Finally, if
-the the hazard is viable and cyclic (i.e. \code{Interval > 0.0}) then
-the next cycle is scheduled with \code{Schedule_Hazard} for time
+hazard, and the placeholder is replaced with the actual hazard.  If
+the hazard is not viable and scheduled to be removed, then the hazard
+is simply appended to \code{State.Hazards}.  Finally, if the the
+hazard is viable and cyclic (i.e. \code{Interval > 0.0}) then the next
+cycle is scheduled with \code{Schedule_Hazard} for time
 \code{Event.Time + Interval}.
 
 The hazard removal \code{Handle} simply deletes the hazard from
 \code{State.Hazards}, a doubly-linked list of emplaced hazards.
 
-\subsection{Event Deallocation}
-
-An instance of \code{Ada.Unchecked_Deallocation} named \code{Free} is
-used to delete already processed events to prevent memory leaks.
-
-
-\section{Changed Data Structures and Code}
-
-If a friend moves within 10 meters of a hazard, the hazard detonates
-and is immediately removed from the scenario.  The friend is hurt with
-probability = (friend vulnerability * hazard effectiveness).  For
-example, if the friend is of maximum vulnerability 1 and the hazard is
-of maximum effectiveness 1, then the friend is certainly hurt.  If the
-friend is hurt, it is immediately removed from the scenario.
+\clearpage
 
 \section{Changes to Data Structures}
-1. changes to data structures
+
+No changes were made to the original Data Structures, which is
+slightly worrisome but a quote by Alan Perlis provides some small
+measure of comfort: ``It is better to have 100 functions operate on
+one data structure than 10 functions on 10 data structures.''
 
 
 \section{Changes to Code}
-2. changes to code that must be made in order to implement the desired
-simulator function.
-
 First, we must determine if a friend is within ten meters of a hazard,
-a problem commonly known as collision detection.  The naive alogrithm
-of comparing each friend to each hazard has a time complexity of
-$O(n^2)$, but should be suitable for the vast majority of simulations.
-The natural place for detection is in a new procedure
-\code{Friend_Is_Hurt} which is called from \code{Handle} for friend
-movement before the call to \code{Advance}.  We use an out parameter
-\code{Is_Hurt} as a boolean flag to signal that the friend is hurt.
+a problem commonly known as collision detection.  \code{Advance}
+handles collision detection by returning a \code{Stopper_ID} if any
+element in \code{Stoppers} is less than \code{Stopper_Radius} away.
+We must convert \code{State.Hazards} into a stopper list.  We
+accomplish this with the aptly named
+\code{Convert_Hazards_To_Stoppers} which iterates through the hazards
+and fills an array of the same length with \code{Hazard.ID} and
+\code{Hazard.Location} to create a \code{Stopper_Type}.  After
+\code{Advance} returns an ID, we convert it back to a
+\code{Emplaced_Hazard_Cursor_Type} using a function named
+\code{Find_Hazard_From_ID}.  The function works by creating a dummy
+\code{Emplaced_Hazard_Type} with the a matching ID and then uses
+\code{Find} to get the correct cursor from \code{State.Hazards}.  We
+could use a map from IDs to cursors, but that would increase the
+complexity for little benefit.  The number of hazards is usually very
+small.  With the hazard cursor, we can determine if the friend will be
+hurt with \code{Friend_Is_Hurt}.
 
 \subsection{Friend_Is_Hurt Definition}
 \code{Friend_Is_Hurt} takes three parameters, \code{Friend_Enroute} as
-defined in \code{Handle}, \code{State.Hazards} which is in scope, and
-the out parameter \code{Is_Hurt}.  We loop through the hazards using
-the \code{Iterate} procedure, each time checking to see if the
-distance between the friend and current hazard is less than ten
-meters.  We employ the distance formula using the point locations of
-the friend and current hazard as $x$ and $y$.
-
-\[distance = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}\]
-
-To obtain the point locations we use the predefined location fields
-for \code{Friend_Enroute_Type} and \code{Emplaced_Hazard_Type}.  To
+defined in \code{Handle}, \code{Hazard_Cursor} as provided by
+\code{Find_Hazard_From_ID}, and the out parameter \code{Is_Hurt}. To
 determine if a friend is hurt by a hazard we need a random number
 generator, the friend vulnerability and the hazard effectiveness.
 \code{Ada.Numerics.Float_Random} is already in scope and provides
 random floats between 0.0 and 1.0.  We simply instaniate a
-\code{Generator} and call \code{Random} with the
-generator. \code{Find_Friend_Vulnerability} is already defined.
-\code{Find_Threat_Effectiveness} is defined in the \code{ast-tree}
-package as an accessor for the \code{Effectiveness} field in
-\code{Threat_Type} by using the convenience function
-\code{Find_Positive_Value}.  A friend is hurt if $random(generator) <=
-vulnerability \cdot effectiveness$.
+\code{Generator} and call \code{Random} with the generator to obtain a
+random number. \code{Find_Friend_Vulnerability} is already defined.
+\code{Find_Threat_Effectiveness} must be defined in the
+\code{ast-tree} package as an accessor for the \code{Effectiveness}
+field in \code{Threat_Type} by using the convenience function
+\code{Find_Positive_Value}.  A friend is hurt if:
 
-After determining a friend is hurt, we must remove the friend from
-\code{State.Friends_Enroute} and the hazards from
-\code{State.Hazards}.  We remove friend by calling \code{FEL.Delete}
+\[random(generator) \leq vulnerability \times effectiveness\]
+
+\subsection{Cleaning Up}
+After determining a friend is hurt, we must remove the hazard removal
+event from \code{State.Event_Queue}, the friend from
+\code{State.Friends_Enroute} and the hazard from \code{State.Hazards}.
+We remove the hazard removal event by using the
+\code{Removal_Event_Cursor} field in the Hazard to delete the
+corresponding event.  We remove the friend by calling \code{FEL.Delete}
 with \code{State.Friends_Enroute} and \code{Friend_Enroute_Cursor}
 which are previously defined.  We remove the hazard in a similar
 manner, calling \code{EHL.Delete} with \code{State.Hazards} and the

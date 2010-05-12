@@ -1,11 +1,8 @@
 -- Model IED Simulator
 -- COL Gene Ressler, 1 December 2007
 
-with Ada.Text_IO, Ada.Tags, Ada.Numerics.Float_Random;
-use  Ada.Text_IO, Ada.Tags, Ada.Numerics.Float_Random;
-
-with Ada.Numerics.Long_Elementary_Functions;
-use  Ada.Numerics.Long_Elementary_Functions;
+with Ada.Text_IO, Ada.Long_Float_Text_IO, Ada.Tags, Ada.Numerics.Float_Random;
+use  Ada.Text_IO, Ada.Long_Float_Text_IO, Ada.Tags, Ada.Numerics.Float_Random;
 
 with Ada.Unchecked_Deallocation;
 
@@ -16,31 +13,31 @@ package body Simulator is
 
    -- Set up these short names for packages to make dot notation more
    -- readable. Can't use "use" because there is no way to tell between
-   -- generic Ada.Containers procedures and functions with the same name.
+   -- procedures and functions with the same name.
    package EQ  renames Event_Queues;
    package FEL renames Friend_Enroute_Lists;
    package EHL renames Emplaced_Hazard_Lists;
-   use type EHL.Cursor;
-   
+
+
    -- Comparison function for lists of hazards and friends enroute.
-   function Is_Same (Left, Right : in Emplaced_Hazard_Type) return Boolean is
+   function Is_Same(Left, Right : in Emplaced_Hazard_Type) return Boolean is
    begin
-      return Left.ID = Right.ID;
+      return Left.Id = Right.Id;
    end Is_Same;
 
    function Is_Same (Left, Right : in Friend_Enroute_Type) return Boolean is
    begin
-      return Left.ID = Right.ID;
+      return Left.Id = Right.Id;
    end Is_Same;
 
    -- Override controlled base type to ensure every event gets its
    -- own unique id automatically.
-   Next_Event_ID : Positive := 1;
+   Next_Event_Id : Positive := 1;
    overriding
    procedure Initialize (Object : in out Event_Type) is
    begin
-      Object.ID := Next_Event_ID;
-      Next_Event_ID := Next_Event_ID + 1;
+      Object.Id := Next_Event_Id;
+      Next_Event_Id := Next_Event_Id + 1;
    end Initialize;
 
    -- Since our events are allocated with 'new' when we queue them up,
@@ -53,12 +50,12 @@ package body Simulator is
    function Is_Sooner (Left, Right : in Event_Ptr_Type) return Boolean is
    begin
       return Left.Time < Right.Time or
-        (Left.Time = Right.Time and Left.ID < Right.ID);
+        (Left.Time = Right.Time and Left.Id < Right.Id);
    end Is_Sooner;
 
    function Is_Same (Left, Right : in Event_Ptr_Type) return Boolean is
    begin
-      return Left.ID = Right.ID;
+      return Left.Id = Right.Id;
    end Is_Same;
 
    -- Specialize the behavior of Delete so that the allocated event is freed.
@@ -105,7 +102,7 @@ package body Simulator is
                                      Time : in Real;
                                      Event_Cursor : out EQ.Cursor) is
       Event : Hazard_Removal_Ptr_Type;
-      Inserted : Boolean; -- never used
+      Inserted : Boolean;
    begin
       Event := new Hazard_Removal_Type;
       Event.Time := Time;
@@ -135,7 +132,7 @@ package body Simulator is
    ---------------------------------------------------------------------
 
    -- Handle a trip start event.
-   Next_Friend_Enroute_ID : Positive := 1;
+   Next_Friend_Enroute_Id : Positive := 1;
    procedure Handle (Event : in Trip_Start_Type;
                      State : in out Simulation_State_Type) is
       use Hard_Route_Vectors;
@@ -144,14 +141,14 @@ package body Simulator is
    begin
       -- Add a friend enroute to make this trip.
       FEL.Append(State.Friends_Enroute,
-        Friend_Enroute_Type'(ID => Next_Friend_Enroute_ID,
+        Friend_Enroute_Type'(Id => Next_Friend_Enroute_Id,
                              Friend => Friend_Ptr_Type(Event.Trip.Friend),
                              Route => Route,
                              Position => 0.0, -- Start of route.
                              Segment_Index => 1, -- First segment.
                              Location => First_Element(Route.Hard_Route).Point,
                              Last_Update_Time => Event.Time));
-      Next_Friend_Enroute_ID := Next_Friend_Enroute_ID + 1;
+      Next_Friend_Enroute_Id := Next_Friend_Enroute_Id + 1;
 
       -- Schedule movement to the start point.
       Schedule_Friend_Movement(State,
@@ -166,68 +163,65 @@ package body Simulator is
                              Event.Time + Interval);
       end if;
    end Handle;
-   
-   function Convert_Hazards_To_Stoppers (Hazards : in Emplaced_Hazard_List_Type) 
-                                        return Stopper_List_Type is
-      Stoppers : Stopper_List_Type(1 .. Natural(Hazards.Length));
-      Index : Positive := 1;
-      
-      procedure Fill_Stopper (Position : in EHL.Cursor) is
-         Hazard : Emplaced_Hazard_Type := EHL.Element(Position);
-      begin
-         Stoppers(Index) := Stopper_Type'(Hazard.ID, Hazard.Location);
-         Index := Index + 1;
-      end Fill_Stopper;
+
+
+   -- Random determination of whether a friend is hurt by a hazard detonation.
+   Detonation_Random : Generator;
+   function Friend_Is_Hurt(Friend_Enroute : in Friend_Enroute_Type;
+                           Hazard : in Emplaced_Hazard_Type) return Boolean is
    begin
-      Hazards.Iterate(Fill_Stopper'Access);
-      return Stoppers;
-   end Convert_Hazards_To_Stoppers;
-
-   procedure Friend_Is_Hurt (Friend : in Friend_Enroute_Type;
-                             Hazard_Cursor :  in Emplaced_Hazard_Cursor_Type;
-                             Is_Hurt : out Boolean) is
-      Gen : Generator;
-      Friend_Vulnerability : Real;
-      Hazard : Emplaced_Hazard_Type;
-      Random_Num : Real := Real(Random(Gen));
-      Hazard_Effectiveness : Real;
-
-   begin
-      Is_Hurt := False; -- default value
-      
-      if Hazard_Cursor = EHL.No_Element then
-         return;
-      end if;
-      
-      Hazard := EHL.Element(Hazard_Cursor);
-
-      Find_Friend_Vulnerability(Friend.Friend, Friend_Vulnerability);
-      
-      Find_Threat_Effectiveness(Hazard.Threat, Hazard_Effectiveness);
-      Put_Line("   Vulnerability & Threat: " & Friend_Vulnerability'Img & " " & Hazard_Effectiveness'Img);
-      if Random_Num <= Hazard_Effectiveness * Friend_Vulnerability then
-         Is_Hurt := True;
-      end if;
+      return
+        Real(Random(Detonation_Random)) <=
+          Hazard.Threat.Hard_Effectiveness *
+            Friend_Enroute.Friend.Hard_Vulnerability;
    end Friend_Is_Hurt;
-   
-   function Find_Hazard_From_ID (Hazards : in Emplaced_Hazard_List_Type;
-                                 Hazard_ID : in Natural) 
-                                return Emplaced_Hazard_Cursor_Type is
-      
-      Matching_Hazard_ID : Emplaced_Hazard_Type 
-        := Emplaced_Hazard_Type'(ID => Hazard_ID,
-                                 Threat => null,
-                                 Location => Point_2d_Type'(0.0, 0.0),
-                                 Removal_Event_Cursor => EQ.No_Element
-                                );
-   begin
-      return Hazards.Find(Matching_Hazard_ID);
-   end Find_Hazard_From_ID;
 
+   -- Translate the current list of hazards into a stopper list for the
+   -- Advance procedure in Hard_Routes.
+   function Stopper_List(State : in Simulation_State_Type)
+                         return Stopper_List_Type is
+      Hazard : Emplaced_Hazard_Type;
+      C : EHL.Cursor;
+   begin
+      return List : Stopper_List_Type(1 .. Natural(EHL.Length(State.Hazards))) do
+         C := EHL.First(State.Hazards);
+         for I in List'Range loop
+            Hazard := EHL.Element(C);
+            List(I) := (Id => Hazard.Id, Location => Hazard.Location);
+         end loop;
+      end return;
+   end Stopper_List;
+   
+   procedure Increment (I : in out Integer) is
+   begin
+      I := I + 1;
+   end Increment;
+      
+   procedure Log_Successful_Trip (State : in out simulation_state_type) is
+      Data : Completion_Data_Type renames State.Completion_Data;
+   begin
+      Increment(Data.Num_Successful_Trips);
+      Increment(Data.Num_Total_Trips);
+   end Log_Successful_Trip;
+   
+   procedure Log_Unsuccessful_Trip (State : in out Simulation_State_Type) is
+      Data : Completion_Data_Type renames State.Completion_Data;
+   begin
+      Increment(Data.Num_Total_Trips);
+      Increment(Data.Num_Successful_Hazards);
+   end Log_Unsuccessful_Trip;
+   
+   procedure Log_Hazard_Emplacement (State : in out Simulation_State_Type) is
+      Data : Completion_Data_Type renames State.Completion_Data;
+   begin
+      Increment(Data.Num_Total_Hazards);
+   end Log_Hazard_Emplacement;
+   
    -- Handle a friend movement event.
    procedure Handle (Event : in Friend_Movement_Type;
                      State : in out Simulation_State_Type) is
 
+      use type EQ.Cursor; -- allows comparison of cursors with /=
 
       -- Native speed of the friend from syntax tree.
       Native_Speed : Real;
@@ -238,20 +232,31 @@ package body Simulator is
       -- Get the friend enroute referenced by the movement event.
       Friend_Enroute : Friend_Enroute_Type := FEL.Element(Friend_Enroute_Cursor);
 
+      -- Update the moving friend enroute and schedule the next movement event.
+      -- This is here just to prevent repeating the code twice below.  It makes
+      -- use of the variables above.
+      procedure Continue_Movement is
+      begin
+         -- No.  Finish and replace friend enroute data with updated value.
+         Friend_Enroute.Last_Update_Time := Event.Time;
+         FEL.Replace_Element(State.Friends_Enroute,
+                             Friend_Enroute_Cursor,
+                             Friend_Enroute);
+         -- Schedule the next movement event in the future.
+         Schedule_Friend_Movement(State,
+                                  Event.Time + Movement_Increment / Native_Speed,
+                                  Friend_Enroute_Cursor);
+      end Continue_Movement;
+
       -- True iff friend has completed its route.
       Is_Complete : Boolean;
 
-      -- True iff the friend is hurt by a hazard.
-      Is_Hurt : Boolean;
-
       -- Id of detonating hazard or 0 if no detonation.
-      Hazard_ID : Natural;
+      Hazard_Id : Natural;
 
       -- Cursor pointing to detonating hazard and a copy of the hazard itself.
-      Hazard : Emplaced_Hazard_Cursor_Type;
-      
-      Removal_Event_Cursor : Event_Queues.Cursor;
-      Stoppers : Stopper_List_Type := Convert_Hazards_To_Stoppers(State.Hazards);
+      Hazard_Cursor : Emplaced_Hazard_Cursor_Type;
+      Hazard : Emplaced_Hazard_Type;
    begin
       -- Evaluate the expression for friend speed.
       Find_Friend_Speed(Friend_Enroute.Friend, Native_Speed);
@@ -265,37 +270,54 @@ package body Simulator is
               Point          => Friend_Enroute.Location,
               Is_Complete    => Is_Complete,
               Stopper_Radius => 10.0 / 1000.0, -- 10 meters
-              Stoppers       => Stoppers,
-              Stopper_ID     => Hazard_ID);
-      
-      Hazard := Find_Hazard_From_ID(State.Hazards, Hazard_ID);
-      
-      Friend_Is_Hurt(Friend_Enroute, Hazard, Is_Hurt);
-      
-      if Is_Hurt then
-         Removal_Event_Cursor := EHL.Element(Hazard).Removal_Event_Cursor;
-         Delete(State.Event_Queue, Removal_Event_Cursor);
-         State.Hazards.Delete(Hazard);
-         State.Friends_Enroute.Delete(Friend_Enroute_Cursor);
+              Stoppers       => Stopper_List(State),
+              Stopper_Id     => Hazard_Id);
+
+        --Put_Line("@" & Image(Event.Time) &
+         --        " advance" & Positive'Image(Friend_Enroute.Id) &
+         --        " to " & Image(Friend_Enroute.Location) &
+         --        "(" & Image(Friend_Enroute.Position) & ")");
+
+      -- Handle hazard detonation, if any.
+      if Hazard_Id > 0 then
+
+
+         -- Find the hazard using the id returned from Advance.
+         Hazard_Cursor := EHL.Find(State.Hazards, (Id => Hazard_Id, others => <>));
+         Hazard := EHL.Element(Hazard_Cursor);
+
+         -- Do random determination if friend is hurt by explosion.
+         if Friend_Is_Hurt(Friend_Enroute, Hazard) then
+            FEL.Delete(State.Friends_Enroute, Friend_Enroute_Cursor);
+            Log_Unsuccessful_Trip(State);
+            --  put_line("Friend hurt :(");
+         else
+            --  put_line("Friend safe :)");
+            Continue_Movement;
+         end if;
+
+         -- If the hazard was going to be removed in the future, dequeue the
+         -- event that will do this. You can't remove the hazard after it's
+         -- already been removed here.
+         if Hazard.Removal_Event_Cursor /= EQ.No_Element then
+            Delete(State.Event_Queue, Hazard.Removal_Event_Cursor);
+         end if;
+
+         -- Delete the hazard that has detonated.
+         Emplaced_Hazard_Lists.Delete(State.Hazards, Hazard_Cursor);
+         
       -- Check to see if friend completed its route.
       elsif Is_Complete then
          -- Yes.  Delete the friend enroute from the state.
          FEL.Delete(State.Friends_Enroute, Friend_Enroute_Cursor);
+         Log_Successful_Trip(State);
       else
-         -- No.  Finish and replace friend enroute data with updated value.
-         Friend_Enroute.Last_Update_Time := Event.Time;
-         FEL.Replace_Element(State.Friends_Enroute,
-                             Friend_Enroute_Cursor,
-                             Friend_Enroute);
-         -- Schedule the next movement event in the future.
-         Schedule_Friend_Movement(State,
-                                  Event.Time + Movement_Increment / Native_Speed,
-                                  Friend_Enroute_Cursor);
+         Continue_Movement;
       end if;
    end Handle;
 
    -- Handle a hazard emplacement event.
-   Next_Hazard_ID : Positive := 1;
+   Next_Hazard_Id : Positive := 1;
    procedure Handle (Event : in Hazard_Emplacement_Type;
                      State : in out Simulation_State_Type) is
       Duration, Interval : Real;
@@ -303,10 +325,13 @@ package body Simulator is
    begin
       -- Find out how long the hazard is going to be present before removal.
       Find_Threat_Duration(Event.Threat, Duration);
-
+      --put_line("threat duration  = "&Real'Image(Duration));
+      
+      Log_Hazard_Emplacement(State);
+      
       -- Begin building the hazard.
-      Emplaced_Hazard.ID := Next_Hazard_ID;
-      Next_Hazard_ID := Next_Hazard_ID + 1;
+      Emplaced_Hazard.Id := Next_Hazard_Id;
+      Next_Hazard_Id := Next_Hazard_Id + 1;
       Emplaced_Hazard.Threat := Event.Threat;
       Get_Random_Point(Event.Threat.Segment_Set, Emplaced_Hazard.Location);
 
@@ -329,18 +354,16 @@ package body Simulator is
                              EHL.Last(State.Hazards),
                              Emplaced_Hazard);
 
-         Put_Line("#schedule removal " & Image(Event.Time + Duration));
       else
          EHL.Append(State.Hazards, Emplaced_Hazard);
       end if;
 
       Find_Threat_Schedule_Interval(Event.Threat, Interval);
+
       if Duration > 0.0 and Interval > 0.0 then
          Schedule_Hazard(State, Event.Threat, Event.Time + Interval);
       end if;
-      Put_Line("@" & Image(Event.Time) &
-               " hazard" & Positive'Image(Emplaced_Hazard.ID) &
-               " at " & Image(Emplaced_Hazard.Location));
+
    end Handle;
 
    -- Handle a hazard removal event.
@@ -348,7 +371,9 @@ package body Simulator is
                     State : in out Simulation_State_Type) is
       -- Make a copy because Delete parameter is 'in out'.
       C : Ehl.Cursor := Event.Hazard;
+      Hazard : Emplaced_Hazard_Type;
    begin
+      Hazard := EHL.Element(C);
       EHL.Delete(State.Hazards, C);
    end Handle;
 
@@ -357,10 +382,22 @@ package body Simulator is
    ---------------------------------------------------------------------
 
    -- Get a simulation state ready to run. (Not much in current version!)
+   detonate_seed : Positive := 42;
+
    procedure Initialize(State : out Simulation_State_Type;
                         Model : in Node_Ptr_Type) is
    begin
+      State.Time := 0.0;
       State.Model := Model_Ptr_Type(Model);
+      clear(State.Event_Queue);		-- Event queue.
+      EHL.clear(State.Hazards);  	-- Emplaced hazards.
+      FEL.clear(State.Friends_Enroute); -- Friends enroute.
+
+      -- reset locations
+      Initialize_Segments;
+
+      Reset(Detonation_Random, detonate_seed); -- Always get same values.
+      detonate_seed := detonate_seed +1;
    end Initialize;
 
    -- Loop through all the instances in the model and schedule the
@@ -393,7 +430,25 @@ package body Simulator is
          C := Next(C);
       end loop;
    end Schedule_Initial_Events;
-
+   
+   function Calc_Trip_Success_Rate (State : in Simulation_State_Type) 
+                                   return Real is
+      Data : Completion_Data_Type renames State.Completion_Data;
+   begin
+      return Real(Data.Num_Successful_Trips) / Real(Data.Num_Total_Trips);
+   end Calc_Trip_Success_Rate;
+   
+   function Calc_Hazard_Success_Rate (State : in Simulation_State_Type) 
+                                     return Real is
+      Data : Completion_Data_Type renames State.Completion_Data;
+   begin
+      return Real(Data.Num_Successful_Hazards) / Real(Data.Num_Total_Hazards);
+   end Calc_Hazard_Success_Rate;
+   
+   procedure Print_Real (R : in Real) is
+   begin
+      Put(Item => R, Aft => 4, Exp => 0);
+   end Print_Real;
    ---------------------------------------------------------------------
    -- Simulation loop
    ---------------------------------------------------------------------
@@ -410,7 +465,8 @@ package body Simulator is
 
    -- Run the simulation event loop up to given stop time.
    procedure Run(State : in out Simulation_State_Type;
-                 Stop_Time : in Real) is
+                 Stop_Time : in Real;
+                 Run_Number : in Positive) is
       Event : Event_Ptr_Type;
    begin
       -- Initialize the background image of the animation one time.
@@ -438,6 +494,12 @@ package body Simulator is
          -- Redraw the animation.
          Animation.Update(State);
       end loop;
+      -- Print data in a pseudo CSV format
+      Put("Run" & Positive'image(Run_Number) & ",");
+      Print_Real(Calc_Trip_Success_Rate(State));
+      Put(",");
+      Print_Real(Calc_Hazard_Success_Rate(State));
+      New_Line;
    end Run;
 
 end Simulator;
