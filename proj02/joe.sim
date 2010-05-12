@@ -1,0 +1,5 @@
+description
+  test(one : number) = one;
+
+instance
+blah : test(4);

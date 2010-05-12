@@ -1,0 +1,17 @@
+description
+  j = 3;
+  O  = (0, 0);
+  W  = (-10,   0);
+
+  s1 = segment O -> W;
+  r1 = route (s1);
+
+  joe(y:number) : route;
+  truck = friend 10;
+  
+  mail(x:number) : route;
+  joe(y:number) = trip truck -> r1;
+  mail(x:number) = trip truck -> r1;
+
+instance
+  mainInstance : joe(2,4);

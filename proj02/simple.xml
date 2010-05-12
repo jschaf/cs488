@@ -1,0 +1,10 @@
+<lambda_type tag="null"><id>joe</id>
+<formals><formal_type tag="number"><id>y</id>
+</formal_type>
+</formals>
+</lambda_type>
+<lambda_type tag="null"><id>mail</id>
+<formals><formal_type tag="number"><id>x</id>
+</formal_type>
+</formals>
+</lambda_type>

@@ -1,0 +1,21 @@
+Inserting prev undefined: O
+Inserting prev forward: O
+**** Symbol Table Contents *************
+"""" Scope 0 """""""""""""""""""""""""""
+---- O ---------------------------------
+<lambda_type tag="null"><id>O</id>
+<formals></formals>
+</lambda_type>
+
+
+**** Symbol Table Contents *************
+"""" Scope 0 """""""""""""""""""""""""""
+---- O ---------------------------------
+<lambda_type tag="geopoint"><id>O</id>
+<formals></formals>
+</lambda_type>
+Inserting prev undefined: W
+Inserting prev undefined: s1
+Inserting prev undefined: r1
+Inserting prev undefined: truck
+Inserting prev undefined: mail

@@ -4,3 +4,11 @@ html/
 *.ali
 *.htm
 *.html
+*.zip
+*.pdf
+*.png
+*.aux
+*.d
+*.log
+b~*
+*.doc

@@ -1,0 +1,125 @@
+-- Test for MIEDs modeling language and simulator.
+description
+
+  -- Define a scalar constant.
+  eastern_border = 10;
+
+  -- Set up some points, where eastern border is
+  -- the constant above.
+  O  = (0, 0);
+  W  = (-10,   0); E  = (eastern_border,  0);
+  Ehalf = (eastern_border/2, 0);
+  S  = (  0, -10); N  = (0, 10);
+  SW = (-10, -10); NE = (eastern_border, 10);
+  SE = (eastern_border, -10); NW = (-10, 10);
+
+  -- Set up a trafficability constant.
+  main_street_trafficability = 0.9;
+
+  -- Set up some segments that exercise all the
+  -- possible optional attributes.
+  s1 = segment SW -> O
+	with
+	trafficability = main_street_trafficability,
+	vulnerability = 0.7;
+
+  s2 = segment O -> Ehalf
+	with
+	vulnerability = 0.5;
+
+  s3 = segment Ehalf -> NE;
+
+  -- Now we can create a route with 3 segments.  The parser is
+  -- responsible for checking that the end point of each segment
+  -- matches the start point of the next.
+  main_street = route (s1, s2, s3);
+
+  -- More segments...
+  t1 = segment E -> Ehalf
+	with
+	vulnerability = 0.3;
+
+  t2 = segment O -> NW;
+
+  -- Note this route shares a segment with the other one,
+  -- with traffic through it moving in the opposite direction.
+  airport_road = route (t1, ~s2, t2);
+
+  -- A sensor that has a range of only 10 meters.  Only the
+  -- friends that carry these things make sense as responders.
+  short_range_detonator = sensor 10 * 0.001 -> (mail_truck, ert)
+	with
+	effectiveness = 0.9;
+
+  -- Here's your friendly mail truck.  It can go 90 km/hr under
+  -- ideal conditions and carries a sensor.
+  mail_truck = friend 60 -- km/hour speed
+	with
+	sensor = short_range_detonator,
+	vulnerability = 0.5, -- to being hurt by a threat
+	effectiveness = 0.9; -- as a mitigator
+
+  -- Here's your friendly mail truck.  It can go 90 km/hr under
+  -- ideal conditions and carries a sensor.
+  land_cruiser = friend 110 -- km/hour speed
+	with
+	vulnerability = 0.8; -- to being hurt by a threat
+
+  -- This is an emergency response team.  We'll play little tricks
+  -- with MIEDs semantics so that all it ever does is respond to
+  -- sensor reports from the mail truck.
+  ert = friend 90
+	with
+	sensor = short_range_detonator,
+	vulnerability = 0.1,
+	effectiveness = 1.0;
+
+  -- Here is a null schedule.  It's a 1-shot schedule with
+  -- a start time so far in the future that we'll never see it.
+  waiting_to_respond = schedule with start = 1000000000;
+
+  -- Try some example schedules
+  default = schedule;
+
+  daily_at_noon = schedule
+	with
+	start = 12,
+	interval = normal(24, 0.3);
+
+  weekly_o_dark = schedule
+  	with
+	start = 2,
+	interval = 24 * 7 + uniform(-.1, .1);
+
+  mail_run(x : schedule) = trip mail_truck -> main_street
+	with
+	schedule = x;
+
+  random_daily = schedule
+        with start = 1.0, interval = exponential(1.5);
+
+  transportation_run = trip land_cruiser -> airport_road
+        with
+        schedule = random_daily;
+
+  intersection = segment O -> O; -- zero-length segment
+  ert_station = route(intersection); -- "route" at intersection
+
+  rapid_response(y : route) = trip ert -> y
+	with
+	schedule = waiting_to_respond;
+
+  tick_tock(z : number) = schedule with interval = z;
+
+  generally_bad(days : number) = threat (main_street, airport_road)
+	with
+	schedule = tick_tock(days * 24),
+        duration = 1.2 + exponential(1.0);
+
+instance
+  initial_run : mail_run(default);
+  noon_mail_run : mail_run(daily_at_noon);
+  payroll_run : mail_run(weekly_o_dark);
+  vip : transportation_run;
+  ready_team_standing_by : rapid_response(ert_station);
+  steady_bad_news : generally_bad(0.3); -- hazards placed every .3 days or so.

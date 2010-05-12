@@ -1,0 +1,1137 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<model tag="null">
+  <defs>
+    <def_type tag="null">
+      <id>mail_run</id>
+      <lambda_type tag="null">
+        <id>mail_run</id>
+        <formals>
+          <formal_type tag="null">
+            <id>x</id>
+          </formal_type>
+        </formals>
+        <description>
+          <formal_type tag="null">
+            <id>{return}</id>
+          </formal_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>eastern_border</id>
+      <lambda_type tag="null">
+        <id>eastern_border</id>
+        <formals></formals>
+        <description>
+          <literal_type tag="null">
+            <value>10.00000</value>
+          </literal_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>O</id>
+      <lambda_type tag="null">
+        <id>O</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>O</id>
+            <x>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>W</id>
+      <lambda_type tag="null">
+        <id>W</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>W</id>
+            <x>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>E</id>
+      <lambda_type tag="null">
+        <id>E</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>E</id>
+            <x>
+              <id_ref_type tag="null">
+                <id>eastern_border</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>Ehalf</id>
+      <lambda_type tag="null">
+        <id>Ehalf</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>Ehalf</id>
+            <x>
+              <div_type tag="null">
+                <lhs>
+                  <id_ref_type tag="null">
+                    <id>eastern_border</id>
+                    <actuals></actuals>
+                  </id_ref_type>
+                </lhs>
+                <rhs>
+                  <literal_type tag="null">
+                    <value>2.00000</value>
+                  </literal_type>
+                </rhs>
+              </div_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>S</id>
+      <lambda_type tag="null">
+        <id>S</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>S</id>
+            <x>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </x>
+            <y>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>N</id>
+      <lambda_type tag="null">
+        <id>N</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>N</id>
+            <x>
+              <literal_type tag="null">
+                <value>0.00000</value>
+              </literal_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>10.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>SW</id>
+      <lambda_type tag="null">
+        <id>SW</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>SW</id>
+            <x>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </x>
+            <y>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>NE</id>
+      <lambda_type tag="null">
+        <id>NE</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>NE</id>
+            <x>
+              <id_ref_type tag="null">
+                <id>eastern_border</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>10.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>SE</id>
+      <lambda_type tag="null">
+        <id>SE</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>SE</id>
+            <x>
+              <id_ref_type tag="null">
+                <id>eastern_border</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </x>
+            <y>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>NW</id>
+      <lambda_type tag="null">
+        <id>NW</id>
+        <formals></formals>
+        <description>
+          <geopoint_type tag="null">
+            <id>NW</id>
+            <x>
+              <neg_type tag="null">
+                <x>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </x>
+              </neg_type>
+            </x>
+            <y>
+              <literal_type tag="null">
+                <value>10.00000</value>
+              </literal_type>
+            </y>
+          </geopoint_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>main_street_trafficability</id>
+      <lambda_type tag="null">
+        <id>main_street_trafficability</id>
+        <formals></formals>
+        <description>
+          <literal_type tag="null">
+            <value>0.90000</value>
+          </literal_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>s1</id>
+      <lambda_type tag="null">
+        <id>s1</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>SW</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>O</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <id_ref_type tag="null">
+                <id>main_street_trafficability</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </trafficability>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.70000</value>
+              </literal_type>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>s2</id>
+      <lambda_type tag="null">
+        <id>s2</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>O</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>Ehalf</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <null/>
+            </trafficability>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.50000</value>
+              </literal_type>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>s3</id>
+      <lambda_type tag="null">
+        <id>s3</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>Ehalf</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>NE</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <null/>
+            </trafficability>
+            <vulnerability>
+              <null/>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>main_street</id>
+      <lambda_type tag="null">
+        <id>main_street</id>
+        <formals></formals>
+        <description>
+          <route_type tag="null">
+            <segments>
+              <id_ref_type tag="null">
+                <id>s1</id>
+                <actuals></actuals>
+              </id_ref_type>
+              <id_ref_type tag="null">
+                <id>s2</id>
+                <actuals></actuals>
+              </id_ref_type>
+              <id_ref_type tag="null">
+                <id>s3</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </segments>
+          </route_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>t1</id>
+      <lambda_type tag="null">
+        <id>t1</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>E</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>Ehalf</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <null/>
+            </trafficability>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.30000</value>
+              </literal_type>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>t2</id>
+      <lambda_type tag="null">
+        <id>t2</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>O</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>NW</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <null/>
+            </trafficability>
+            <vulnerability>
+              <null/>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>airport_road</id>
+      <lambda_type tag="null">
+        <id>airport_road</id>
+        <formals></formals>
+        <description>
+          <route_type tag="null">
+            <segments>
+              <id_ref_type tag="null">
+                <id>t1</id>
+                <actuals></actuals>
+              </id_ref_type>
+              <neg_type tag="null">
+                <x>
+                  <id_ref_type tag="null">
+                    <id>s2</id>
+                    <actuals></actuals>
+                  </id_ref_type>
+                </x>
+              </neg_type>
+              <id_ref_type tag="null">
+                <id>t2</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </segments>
+          </route_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>mail_truck</id>
+      <lambda_type tag="null">
+        <id>mail_truck</id>
+        <formals></formals>
+        <description>
+          <formal_type tag="null">
+            <id>{return}</id>
+          </formal_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>short_range_detonator</id>
+      <lambda_type tag="null">
+        <id>short_range_detonator</id>
+        <formals></formals>
+        <description>
+          <sensor_type tag="null">
+            <range>
+              <mul_type tag="null">
+                <lhs>
+                  <literal_type tag="null">
+                    <value>10.00000</value>
+                  </literal_type>
+                </lhs>
+                <rhs>
+                  <literal_type tag="null">
+                    <value>0.00100</value>
+                  </literal_type>
+                </rhs>
+              </mul_type>
+            </range>
+            <responders>
+              <id_ref_type tag="null">
+                <id>mail_truck</id>
+                <actuals></actuals>
+              </id_ref_type>
+              <id_ref_type tag="null">
+                <id>ert</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </responders>
+            <effectiveness>
+              <literal_type tag="null">
+                <value>0.90000</value>
+              </literal_type>
+            </effectiveness>
+          </sensor_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>mail_truck</id>
+      <lambda_type tag="null">
+        <id>mail_truck</id>
+        <formals></formals>
+        <description>
+          <friend_type tag="null">
+            <speed>
+              <literal_type tag="null">
+                <value>60.00000</value>
+              </literal_type>
+            </speed>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.50000</value>
+              </literal_type>
+            </vulnerability>
+            <effectiveness>
+              <literal_type tag="null">
+                <value>0.90000</value>
+              </literal_type>
+            </effectiveness>
+            <sensor>
+              <id_ref_type tag="null">
+                <id>short_range_detonator</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </sensor>
+          </friend_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>land_cruiser</id>
+      <lambda_type tag="null">
+        <id>land_cruiser</id>
+        <formals></formals>
+        <description>
+          <friend_type tag="null">
+            <speed>
+              <literal_type tag="null">
+                <value>110.00000</value>
+              </literal_type>
+            </speed>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.80000</value>
+              </literal_type>
+            </vulnerability>
+            <effectiveness>
+              <null/>
+            </effectiveness>
+            <sensor>
+              <null/>
+            </sensor>
+          </friend_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>ert</id>
+      <lambda_type tag="null">
+        <id>ert</id>
+        <formals></formals>
+        <description>
+          <friend_type tag="null">
+            <speed>
+              <literal_type tag="null">
+                <value>90.00000</value>
+              </literal_type>
+            </speed>
+            <vulnerability>
+              <literal_type tag="null">
+                <value>0.10000</value>
+              </literal_type>
+            </vulnerability>
+            <effectiveness>
+              <literal_type tag="null">
+                <value>1.00000</value>
+              </literal_type>
+            </effectiveness>
+            <sensor>
+              <id_ref_type tag="null">
+                <id>short_range_detonator</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </sensor>
+          </friend_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>waiting_to_respond</id>
+      <lambda_type tag="null">
+        <id>waiting_to_respond</id>
+        <formals></formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <literal_type tag="null">
+                <value>1000000000.00000</value>
+              </literal_type>
+            </start>
+            <interval>
+              <null/>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>default</id>
+      <lambda_type tag="null">
+        <id>default</id>
+        <formals></formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <null/>
+            </start>
+            <interval>
+              <null/>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>default_run</id>
+      <lambda_type tag="null">
+        <id>default_run</id>
+        <formals></formals>
+        <description>
+          <id_ref_type tag="null">
+            <id>mail_run</id>
+            <actuals>
+              <id_ref_type tag="null">
+                <id>default</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </actuals>
+          </id_ref_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>daily_at_noon</id>
+      <lambda_type tag="null">
+        <id>daily_at_noon</id>
+        <formals></formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <literal_type tag="null">
+                <value>12.00000</value>
+              </literal_type>
+            </start>
+            <interval>
+              <normal_type tag="null">
+                <mu>
+                  <literal_type tag="null">
+                    <value>24.00000</value>
+                  </literal_type>
+                </mu>
+                <sigma>
+                  <literal_type tag="null">
+                    <value>0.30000</value>
+                  </literal_type>
+                </sigma>
+              </normal_type>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>weekly_o_dark</id>
+      <lambda_type tag="null">
+        <id>weekly_o_dark</id>
+        <formals></formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <literal_type tag="null">
+                <value>2.00000</value>
+              </literal_type>
+            </start>
+            <interval>
+              <sub_type tag="null">
+                <lhs>
+                  <mul_type tag="null">
+                    <lhs>
+                      <literal_type tag="null">
+                        <value>24.00000</value>
+                      </literal_type>
+                    </lhs>
+                    <rhs>
+                      <literal_type tag="null">
+                        <value>7.00000</value>
+                      </literal_type>
+                    </rhs>
+                  </mul_type>
+                </lhs>
+                <rhs>
+                  <uniform_type tag="null">
+                    <min>
+                      <neg_type tag="null">
+                        <x>
+                          <literal_type tag="null">
+                            <value>0.10000</value>
+                          </literal_type>
+                        </x>
+                      </neg_type>
+                    </min>
+                    <max>
+                      <literal_type tag="null">
+                        <value>0.10000</value>
+                      </literal_type>
+                    </max>
+                  </uniform_type>
+                </rhs>
+              </sub_type>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>mail_run</id>
+      <lambda_type tag="null">
+        <id>mail_run</id>
+        <formals>
+          <formal_type tag="null">
+            <id>x</id>
+          </formal_type>
+        </formals>
+        <description>
+          <trip_type tag="null">
+            <friend>
+              <id_ref_type tag="null">
+                <id>mail_truck</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </friend>
+            <route>
+              <id_ref_type tag="null">
+                <id>main_street</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </route>
+            <schedule>
+              <id_ref_type tag="null">
+                <id>x</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </schedule>
+          </trip_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>random_daily</id>
+      <lambda_type tag="null">
+        <id>random_daily</id>
+        <formals></formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <literal_type tag="null">
+                <value>1.00000</value>
+              </literal_type>
+            </start>
+            <interval>
+              <exponential_type tag="null">
+                <beta>
+                  <literal_type tag="null">
+                    <value>1.50000</value>
+                  </literal_type>
+                </beta>
+              </exponential_type>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>transportation_run</id>
+      <lambda_type tag="null">
+        <id>transportation_run</id>
+        <formals></formals>
+        <description>
+          <trip_type tag="null">
+            <friend>
+              <id_ref_type tag="null">
+                <id>land_cruiser</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </friend>
+            <route>
+              <id_ref_type tag="null">
+                <id>airport_road</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </route>
+            <schedule>
+              <id_ref_type tag="null">
+                <id>random_daily</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </schedule>
+          </trip_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>intersection</id>
+      <lambda_type tag="null">
+        <id>intersection</id>
+        <formals></formals>
+        <description>
+          <segment_type tag="null">
+            <a>
+              <id_ref_type tag="null">
+                <id>O</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </a>
+            <b>
+              <id_ref_type tag="null">
+                <id>O</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </b>
+            <trafficability>
+              <null/>
+            </trafficability>
+            <vulnerability>
+              <null/>
+            </vulnerability>
+          </segment_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>ert_station</id>
+      <lambda_type tag="null">
+        <id>ert_station</id>
+        <formals></formals>
+        <description>
+          <route_type tag="null">
+            <segments>
+              <id_ref_type tag="null">
+                <id>intersection</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </segments>
+          </route_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>rapid_response</id>
+      <lambda_type tag="null">
+        <id>rapid_response</id>
+        <formals>
+          <formal_type tag="null">
+            <id>y</id>
+          </formal_type>
+        </formals>
+        <description>
+          <trip_type tag="null">
+            <friend>
+              <id_ref_type tag="null">
+                <id>ert</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </friend>
+            <route>
+              <id_ref_type tag="null">
+                <id>y</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </route>
+            <schedule>
+              <id_ref_type tag="null">
+                <id>waiting_to_respond</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </schedule>
+          </trip_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>tick_tock</id>
+      <lambda_type tag="null">
+        <id>tick_tock</id>
+        <formals>
+          <formal_type tag="null">
+            <id>z</id>
+          </formal_type>
+        </formals>
+        <description>
+          <schedule_type tag="null">
+            <start>
+              <null/>
+            </start>
+            <interval>
+              <id_ref_type tag="null">
+                <id>z</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </interval>
+          </schedule_type>
+        </description>
+      </lambda_type>
+    </def_type>
+    <def_type tag="null">
+      <id>generally_bad</id>
+      <lambda_type tag="null">
+        <id>generally_bad</id>
+        <formals>
+          <formal_type tag="null">
+            <id>days</id>
+          </formal_type>
+        </formals>
+        <description>
+          <threat_type tag="null">
+            <target_segments>
+              <id_ref_type tag="null">
+                <id>main_street</id>
+                <actuals></actuals>
+              </id_ref_type>
+              <id_ref_type tag="null">
+                <id>airport_road</id>
+                <actuals></actuals>
+              </id_ref_type>
+            </target_segments>
+            <effectiveness>
+              <null/>
+            </effectiveness>
+            <vulnerability>
+              <null/>
+            </vulnerability>
+            <schedule>
+              <id_ref_type tag="null">
+                <id>tick_tock</id>
+                <actuals>
+                  <mul_type tag="null">
+                    <lhs>
+                      <id_ref_type tag="null">
+                        <id>days</id>
+                        <actuals></actuals>
+                      </id_ref_type>
+                    </lhs>
+                    <rhs>
+                      <literal_type tag="null">
+                        <value>24.00000</value>
+                      </literal_type>
+                    </rhs>
+                  </mul_type>
+                </actuals>
+              </id_ref_type>
+            </schedule>
+            <duration>
+              <sub_type tag="null">
+                <lhs>
+                  <literal_type tag="null">
+                    <value>1.20000</value>
+                  </literal_type>
+                </lhs>
+                <rhs>
+                  <exponential_type tag="null">
+                    <beta>
+                      <literal_type tag="null">
+                        <value>1.00000</value>
+                      </literal_type>
+                    </beta>
+                  </exponential_type>
+                </rhs>
+              </sub_type>
+            </duration>
+          </threat_type>
+        </description>
+      </lambda_type>
+    </def_type>
+  </defs>
+  <instances>
+    <instance_type tag="null">
+      <id>initial_run</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>mail_run</id>
+          <actuals>
+            <id_ref_type tag="null">
+              <id>default</id>
+              <actuals></actuals>
+            </id_ref_type>
+          </actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>normal_run</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>default_run</id>
+          <actuals></actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>noon_mail_run</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>mail_run</id>
+          <actuals>
+            <id_ref_type tag="null">
+              <id>daily_at_noon</id>
+              <actuals></actuals>
+            </id_ref_type>
+          </actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>payroll_run</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>mail_run</id>
+          <actuals>
+            <id_ref_type tag="null">
+              <id>weekly_o_dark</id>
+              <actuals></actuals>
+            </id_ref_type>
+          </actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>vip</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>transportation_run</id>
+          <actuals></actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>ready_team_standing_by</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>rapid_response</id>
+          <actuals>
+            <id_ref_type tag="null">
+              <id>ert_station</id>
+              <actuals></actuals>
+            </id_ref_type>
+          </actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+    <instance_type tag="null">
+      <id>steady_bad_news</id>
+      <def>
+        <id_ref_type tag="null">
+          <id>generally_bad</id>
+          <actuals>
+            <literal_type tag="null">
+              <value>0.30000</value>
+            </literal_type>
+          </actuals>
+        </id_ref_type>
+      </def>
+    </instance_type>
+  </instances>
+</model>

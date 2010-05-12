@@ -1,0 +1,24 @@
+--  with "gtkada";
+
+project Mieds is
+
+   type Mode_Type is
+      ("Production", "Debug");
+   Mode : Mode_Type := external ("BUILD", "Debug");
+   for Main use ("mieds.adb");
+   for Source_Dirs use (".");
+   package Compiler is
+      case Mode is
+         when "Debug" =>
+            for Default_Switches ("ada") use ("-gnatf", "-g", "-gnata", "-gnat05");
+         when "Production" =>
+            for Default_Switches ("ada") use ("-O2", "-gnatf", "-g", "-gnata", "-gnat05");
+      end case;
+   end Compiler;
+
+   package Pretty_Printer is
+      for Default_Switches ("ada") use ("-A0", "-A4");
+   end Pretty_Printer;
+
+end Mieds;
+
