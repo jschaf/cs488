@@ -8,6 +8,7 @@
 \usepackage{eulervm}
 \usepackage{setspace}
 \usepackage{fancyhdr}
+\usepackage{tikz}
 
 
 % Minion support
@@ -81,14 +82,43 @@ trip and hazard success ratios, I created simple functions to handle
 the type conversions and division.  To display the resulting reals I
 created a \code{Print_Real} procedure to put reals to the screen
 without the exponent and with four digits following the decimal.
+
 \section{Impact of Point Estimators on Run Length}
+
+As the time increases, the friend success ratio decrease.  In
+contrast, as time increases, the hazard success ratio increases.
+
+\begin{figure}\centering
+  
+  \includegraphics[height=80mm]{data/FriendSuccessRatioVariableTime}
+  \includegraphics[height=80mm]{data/HazardSuccessRatioVariableTime}
+  
+\caption{Success Ratios with different length runs}
+\end{figure}
+
 \section{Change in the confidence half-interval over the change in number of runs}
+
+As expected the confidence interval approaches 100\% as the number of
+runs increases.
+
+\begin{figure}\centering
+  \includegraphics[height=80mm]{data/FriendCI}
+  \includegraphics[height=80mm]{data/HazardCI}
+  \caption{Confidence Intervals with different length runs}
+\end{figure}
 
 \section{Why are the number of hazards placed unchanging over independent replications?}
 
+Because hazard emplacment follows an exponential distribution which describes events whose interarrival times are completely random and independent.
+
 \section{How many runs are truly different between 2 runs and 30 runs in the current simulator?}
 
+The runs are very similar, with only minor variations in the friend
+and hazard success ratios.
+
 \section{Output Data}
+
+All data is contained within runData.xlsx.
 
 
 \end{document}
